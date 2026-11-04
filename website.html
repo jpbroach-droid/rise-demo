@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>Rise Elevator Services</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+/* Website: white + Rise crimson, condensed industrial display type. Every form posts into RiseOS. */
+:root{--disp:'Barlow Condensed','Arial Narrow',sans-serif;--body:'Barlow',system-ui,sans-serif;--ink:#141518;--red:#DF0B48;--red-ink:#B2093A;--paper:#fff;--mist:#F5F5F7}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);font-size:16px}
+.nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1180px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:22px}
+.nav img{height:40px}
+.nav a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px}
+.nav .links{display:flex;gap:18px;margin-left:auto;align-items:center}
+.nav .cta{background:var(--red);color:#fff;padding:9px 16px;border-radius:4px;font-family:var(--disp);font-size:17px;letter-spacing:.03em;text-transform:uppercase;font-weight:700}
+.nav .tel{font-family:var(--mono);font-weight:500;font-size:15px}
+@media(max-width:860px){.nav .links a:not(.cta):not(.tel){display:none}}
+.page{display:none}.page.on{display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:56px 0 48px}
+@media(max-width:860px){.hero{grid-template-columns:1fr;padding:32px 0}}
+.hero h1{font-family:var(--disp);font-size:clamp(44px,6.5vw,84px);line-height:.92;text-transform:uppercase;font-weight:800;letter-spacing:-.01em}
+.hero h1 em{font-style:normal;color:var(--red)}
+.hero p{font-size:19px;color:var(--ink-2);max-width:52ch;margin:18px 0 24px}
+.btn-big{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;text-decoration:none;padding:14px 22px;border-radius:4px;font-family:var(--disp);font-size:20px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;border:0;cursor:pointer}
+.btn-big:hover{background:var(--red-ink)}
+.btn-big.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.shaft{position:relative;aspect-ratio:4/5;max-width:100%;border-radius:6px;background:linear-gradient(180deg,#1c1e24,#2b2e36);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding:24px}
+.shaft:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 58px,rgba(255,255,255,.06) 58px 60px)}
+.car{width:46%;aspect-ratio:3/4;background:#fff;border-radius:3px;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:rise 9s ease-in-out infinite}
+.car:before,.car:after{content:"";position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#f3f3f5,#e4e5ea);}
+.car:before{left:0;border-right:1px solid #cfd1d8}.car:after{right:0;border-left:1px solid #cfd1d8}
+@keyframes rise{0%,100%{transform:translateY(0)}50%{transform:translateY(-62%)}}
+@media(prefers-reduced-motion:reduce){.car{animation:none;transform:translateY(-30%)}}
+.floors{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:38px;font-family:var(--mono);color:rgba(255,255,255,.5);font-size:12px}
+.badge-row{display:flex;gap:22px;flex-wrap:wrap;padding:18px 0 44px;border-top:1px solid var(--line);color:var(--ink-2);font-size:14px}
+.badge-row b{color:var(--ink)}
+.band{background:var(--mist);padding:56px 0}
+.band.dark{background:var(--ink);color:#fff}
+h2.d{font-family:var(--disp);font-size:clamp(34px,4.5vw,54px);text-transform:uppercase;line-height:.95;font-weight:800;margin-bottom:10px}
+.lede{font-size:18px;color:var(--ink-2);max-width:60ch;margin-bottom:28px}
+.dark .lede{color:#B9BCC6}
+.svc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media(max-width:980px){.svc{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.svc{grid-template-columns:1fr}}
+.svc a{display:block;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--red);border-radius:4px;padding:20px 18px 22px;text-decoration:none;color:var(--ink);min-height:180px}
+.svc a:hover{border-color:var(--ink)}
+.svc h3{font-family:var(--disp);font-size:26px;text-transform:uppercase;font-weight:700;line-height:1;margin-bottom:8px}
+.svc p{color:var(--ink-2);font-size:15px}
+.why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 34px}
+@media(max-width:860px){.why{grid-template-columns:1fr}}
+.why h4{font-family:var(--disp);font-size:22px;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.why p{color:#B9BCC6;font-size:15px}
+.quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media(max-width:860px){.quotes{grid-template-columns:1fr}}
+.quote{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:20px;font-size:15px;color:var(--ink-2)}
+.quote b{display:block;color:var(--ink);margin-top:10px;font-family:var(--disp);text-transform:uppercase;font-size:17px}
+.stars{color:var(--red);letter-spacing:2px;font-size:14px}
+.form{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:22px;box-shadow:var(--shadow)}
+.form .field label{font-size:13px}
+.form input,.form select,.form textarea{padding:11px 12px;font-size:15px}
+.urgent{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.urgent label{border:2px solid var(--line);border-radius:6px;padding:12px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.urgent label.on{border-color:var(--red);background:#FDE8EE}
+.urgent input{width:auto;margin-top:3px}
+.ok-box{background:var(--ok-soft);border:1px solid #BFE3D0;border-radius:6px;padding:18px;text-align:center}
+footer{background:var(--ink);color:#B9BCC6;padding:40px 0;font-size:14px}
+footer .wrap{display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px}
+@media(max-width:700px){footer .wrap{grid-template-columns:1fr}}
+footer a{color:#fff;text-decoration:none;display:block;padding:3px 0}
+footer h5{font-family:var(--disp);text-transform:uppercase;font-size:16px;color:#fff;margin-bottom:8px;letter-spacing:.04em}
+.pageh{padding:48px 0 24px}
+.two{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:start}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+.flow{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.flow li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;font-size:15px}
+.flow li span:first-child{font-family:var(--disp);font-size:22px;font-weight:800;color:var(--red);line-height:1}
+.status{font-family:var(--mono);font-size:13px;padding:10px 12px;background:var(--mist);border-radius:4px;margin-top:10px;color:var(--ink-2)}
+</style></head><body>
+<div class="nav"><div class="nav-in"><a href="#home"><img src="assets/rise-logo.png" alt="Rise Elevator Services"></a><div class="links"><a href="#services">Services</a><a href="#about">About</a><a href="#service" >Request service</a><a href="portal.html">Customer portal</a><a class="tel" href="tel:8046247327">(804) 624-7327</a><a class="cta" href="#quote">Get a quote</a></div></div></div>
+
+<!-- HOME -->
+<section class="page on" id="p-home">
+  <div class="wrap">
+    <div class="hero"><div><div class="eyebrow" style="color:var(--red);margin-bottom:12px">Richmond · Northern Virginia · DC · Maryland · Hampton Roads</div><h1>Elevating expectations, <em>one floor at a time.</em></h1><p>Union-trained mechanics, non-proprietary service and same-day response across Virginia, DC and Maryland. Maintenance, repairs, modernization and new installations for commercial, industrial and residential elevators.</p><div class="row" style="gap:12px"><a class="btn-big" href="#service">Elevator down? Request service</a><a class="btn-big ghost" href="#quote">Get a free quote</a></div></div>
+      <div class="shaft"><div class="floors"><span>12</span><span>11</span><span>10</span><span>9</span><span>8</span><span>7</span><span>6</span></div><div class="car"></div></div></div>
+    <div class="badge-row"><span><b>Same-day</b> service available</span><span><b>IUEC</b> union-trained technicians</span><span><b>Non-proprietary</b> — we service every make</span><span><b>48-hour</b> repair guarantee once parts arrive</span><span><b>Licensed</b> in VA, DC and MD</span></div>
+  </div>
+  <div class="band"><div class="wrap"><h2 class="d">What we do</h2><p class="lede">Full-service elevator company. One crew for the life of the equipment, from the day it's installed to the day it's modernized.</p>
+    <div class="svc"><a href="#services"><h3>Maintenance &amp; inspections</h3><p>Lube-only and full-service agreements. Cat 1, Cat 3 and Cat 5 testing coordinated with your AHJ, documented in your portal.</p></a><a href="#service"><h3>Repairs — even same day</h3><p>Door operators, controllers, hydraulics, fixtures. Callbacks routed to your route mechanic the minute you report them.</p></a><a href="#quote"><h3>Modernization</h3><p>Controllers, drives, door equipment, ADA fixtures. Progress-billed, scheduled around your tenants.</p></a><a href="#quote"><h3>New installations</h3><p>Commercial MRL and hydraulic, freight, and residential home elevators. Coordinated with your GC and inspector.</p></a></div></div></div>
+  <div class="band dark"><div class="wrap"><h2 class="d">Why buildings switch to Rise</h2><p class="lede">You hear from us before you have to call.</p>
+    <div class="why"><div><h4>You see everything</h4><p>Every visit, test and repair on every unit lives in your customer portal, with the inspector's paperwork attached.</p></div><div><h4>A mechanic, not a call center</h4><p>Report a problem online or by text. Your route mechanic gets it on their phone and you get their ETA back by text.</p></div><div><h4>No proprietary lock-in</h4><p>Otis, Schindler, KONE, TKE, Dover, MCE. We stock the parts and we don't hold your controller hostage.</p></div><div><h4>Testing scheduled for you</h4><p>We book your annual and five-year tests with the city or third-party inspector and remind them until it's confirmed.</p></div><div><h4>Fixed on the first visit</h4><p>Route mechanics carry the parts their units need. If one has to be ordered, it's repaired within 48 hours of arrival.</p></div><div><h4>Honest proposals</h4><p>Good/better/best options with real numbers, signed online, no surprise change orders.</p></div></div></div></div>
+  <div class="band"><div class="wrap"><h2 class="d">What customers say</h2><div class="quotes"><div class="quote"><div class="stars">★★★★★</div>"They were able to diagnose and fix the issues (yes more than one) and get our elevator back in working order. Quick to respond, thorough, efficient, pleasant, competitively priced, and professional."<b>L. Fricano</b></div><div class="quote"><div class="stars">★★★★★</div>"The local elevator company said it would take a month to get a repair person out. James, the owner, came himself right away and made a temporary repair, then returned with the new part."<b>A. Phillips</b></div><div class="quote"><div class="stars">★★★★★</div>"Super-responsive, ready to take on any challenge, great at explaining issues and even finding creative solutions as needed."<b>O. Strauss</b></div></div></div></div>
+</section>
+
+<!-- SERVICES -->
+<section class="page" id="p-services"><div class="wrap"><div class="pageh"><h2 class="d">Services</h2><p class="lede">Commercial, industrial and residential. Every make.</p></div>
+  <div class="two"><div class="stack" style="gap:22px">
+    <div><h3 style="font-family:var(--disp);font-size:26px;text-transform:uppercase">Maintenance agreements</h3><p style="color:var(--ink-2)">Choose the coverage that fits the building. <b>Oil &amp; grease</b> keeps a well-running unit lubricated and inspected monthly. <b>Parts, oil &amp; grease</b> adds wear parts. <b>Full service</b> covers parts, labor, callbacks during business hours and your annual testing. Every agreement includes a digital maintenance control program on site and in your portal.</p></div>
+    <div><h3 style="font-family:var(--disp);font-size:26px;text-transform:uppercase">Testing &amp; inspections</h3><p style="color:var(--ink-2)">Category 1 annual, Category 3 hydraulic and Category 5 five-year tests, scheduled by us with the City of Richmond, Fairfax, Arlington, Alexandria, Virginia Beach, Norfolk, Dominion or your Maryland third-party inspector. Deficiencies come back to you as a priced correction with the deadline attached.</p></div>
+    <div><h3 style="font-family:var(--disp);font-size:26px;text-transform:uppercase">Repairs</h3><p style="color:var(--ink-2)">Same-day response for units out of service. Entrapments are dispatched immediately and tracked to the minute.</p></div>
+    <div><h3 style="font-family:var(--disp);font-size:26px;text-transform:uppercase">Modernization &amp; installation</h3><p style="color:var(--ink-2)">Controller, drive and door-equipment modernization; ADA accessibility upgrades; new commercial, freight and residential installations. Progress billing with retainage, change orders you sign online.</p></div>
+    <div><h3 style="font-family:var(--disp);font-size:26px;text-transform:uppercase">Emergency phone monitoring</h3><p style="color:var(--ink-2)">Code-required two-way communication monitored 24/7, bundled with your agreement.</p></div>
+  </div><div class="form"><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase;margin-bottom:6px">Service areas</h3><p class="small muted" style="margin-bottom:12px">Four territories, each with its own route mechanics and on-call coverage.</p><div class="stack" style="gap:8px">
+    <div class="stripe RIC" style="padding:4px 10px"><b>Richmond &amp; Central Virginia</b><div class="small muted">Richmond, Henrico, Chesterfield, Charlottesville</div></div><div class="stripe NOVA" style="padding:4px 10px"><b>Northern Virginia</b><div class="small muted">Alexandria, Arlington, Fairfax, Tysons, Reston</div></div><div class="stripe DCMD" style="padding:4px 10px"><b>DC &amp; Maryland</b><div class="small muted">Washington, Bethesda, Silver Spring, Montgomery &amp; PG counties</div></div><div class="stripe HR" style="padding:4px 10px"><b>Hampton Roads</b><div class="small muted">Norfolk, Virginia Beach, Chesapeake, Newport News</div></div></div><a class="btn-big" style="margin-top:18px;width:100%;justify-content:center" href="#quote">Get a quote</a></div></div></div></section>
+
+<!-- ABOUT -->
+<section class="page" id="p-about"><div class="wrap"><div class="pageh"><h2 class="d">About Rise</h2><p class="lede">An independent, union elevator company based in Richmond, serving Virginia, DC and Maryland.</p></div>
+  <div class="two"><div><p style="font-size:17px;color:var(--ink-2);max-width:60ch">We started Rise because building owners deserved an elevator company that picks up the phone, shows up the same day, and tells the truth about what equipment needs. We're more than a local elevator company; we're your partners in elevating experiences and exceeding expectations.</p><p style="font-size:17px;color:var(--ink-2);max-width:60ch;margin-top:14px">Our technicians are IUEC-trained. We service every manufacturer and never lock a customer into proprietary parts. Our owners still run calls.</p><div class="row" style="gap:12px;margin-top:22px"><a class="btn-big" href="#quote">Work with us</a><a class="btn-big ghost" href="portal.html">Customer portal</a></div></div>
+  <div class="form"><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase;margin-bottom:10px">Certifications</h3><ul class="small" style="margin:0;padding-left:18px;color:var(--ink-2);line-height:1.9"><li>IUEC union-signatory contractor</li><li>Licensed elevator contractor — Virginia DPOR, DC DCRA, Maryland DLLR</li><li>Certified elevator mechanics (CEM) on staff</li><li>HomeAdvisor certified · 5-star rated</li><li>OSHA 30 field leadership</li></ul></div></div></div></section>
+
+<!-- REQUEST SERVICE -->
+<section class="page" id="p-service"><div class="wrap"><div class="pageh"><h2 class="d">Request service</h2><p class="lede">Elevator down, stuck, or acting up? Tell us here and it goes straight to dispatch and your route mechanic's phone. <b>If someone is trapped, call (804) 624-7327 as well.</b></p></div>
+  <div class="two"><div class="form" id="svc-form">
+    <div class="stack" style="gap:14px"><div class="urgent"><label class="on"><input type="radio" name="w-p" value="routine" checked><span><b>Something's off</b><br><span class="muted">Running, but noisy, slow, mis-leveling…</span></span></label><label><input type="radio" name="w-p" value="down"><span><b>Out of service</b><br><span class="muted">Car won't move or doors won't close</span></span></label><label style="grid-column:1/-1;border-color:#F3C9BF"><input type="radio" name="w-p" value="entrapment"><span><b style="color:var(--red)">Someone is trapped</b><br><span class="muted">Dispatched immediately. Please also call us.</span></span></label></div>
+    <div class="grid g2"><div class="field"><label>Building</label><select id="w-bldg"></select></div><div class="field"><label>Which elevator</label><select id="w-unit"></select></div></div>
+    <div class="field"><label>What's happening</label><textarea id="w-sum" rows="3" placeholder="e.g. Car 2 is stopping about an inch below the lobby floor"></textarea></div>
+    <div class="grid g2"><div class="field"><label>Your name</label><input id="w-name" value="Gwen Talley"></div><div class="field"><label>Mobile for text updates</label><input id="w-phone" value="(804) 555-0142"></div></div>
+    <button class="btn-big" onclick="sendService()">Send to dispatch</button><p class="xs faint">Not one of our buildings? <a href="#quote">Request a quote</a> and we'll still come out.</p></div></div>
+  <div><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase;margin-bottom:12px">What happens next</h3><ol class="flow"><li><span>1</span><span>Your request hits the dispatch board and your route mechanic's phone at the same time. After hours it goes to the on-call mechanic.</span></li><li><span>2</span><span>The mechanic acknowledges with an ETA. You get it by text within minutes; if they don't respond, dispatch is alerted and a backup is sent.</span></li><li><span>3</span><span>When the car is back in service you get a completion note with what was found and what was done. It's also in your portal history.</span></li></ol></div></div></div></section>
+
+<!-- QUOTE -->
+<section class="page" id="p-quote"><div class="wrap"><div class="pageh"><h2 class="d">Get a free quote</h2><p class="lede">Tell us about the building. A Rise estimator calls back within one business day and the request is already in our system when they do.</p></div>
+  <div class="two"><div class="form" id="q-form"><div class="stack" style="gap:14px"><div class="grid g2"><div class="field"><label>Your name</label><input id="q-name" value="Jenna Ruiz"></div><div class="field"><label>Company / building</label><input id="q-co" value="Scott's Addition Lofts"></div></div><div class="grid g2"><div class="field"><label>Email</label><input id="q-email" value="jruiz@scottsaddition.example.com"></div><div class="field"><label>Phone</label><input id="q-phone" value="(804) 555-0177"></div></div><div class="grid g2"><div class="field"><label>Area</label><select id="q-terr"><option value="RIC">Richmond &amp; Central VA</option><option value="NOVA">Northern Virginia</option><option value="DCMD">DC &amp; Maryland</option><option value="HR">Hampton Roads</option></select></div><div class="field"><label>What do you need</label><select id="q-kind"><option>Maintenance takeover</option><option>Repair</option><option>Modernization</option><option>New installation</option><option>Residential home elevator</option><option>Testing / inspection only</option></select></div></div><div class="grid g2"><div class="field"><label>Number of elevators</label><input id="q-n" value="2" inputmode="numeric"></div><div class="field"><label>Current provider (optional)</label><input id="q-cur" placeholder="e.g. OEM, other"></div></div><div class="field"><label>Anything else</label><textarea id="q-note" rows="3" placeholder="Equipment age, problems, timing…"></textarea></div><button class="btn-big" onclick="sendQuote()">Request quote</button></div></div>
+  <div><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase;margin-bottom:12px">What you'll get</h3><ol class="flow"><li><span>1</span><span>A call from our estimator and, for maintenance, a short site survey.</span></li><li><span>2</span><span>A written proposal you can read, compare options on, and sign from your phone. Terms are spelled out; no revenue games.</span></li><li><span>3</span><span>Your own portal login the day you sign, with every unit, test date and invoice in one place.</span></li></ol></div></div></div></section>
+
+<footer><div class="wrap"><div><img src="assets/rise-logo.png" alt="Rise Elevator" style="height:46px;filter:brightness(0) invert(1)"><p style="margin-top:10px">Rise Elevator Services<br>Richmond, Virginia · serving VA, DC &amp; MD<br><span class="num">(804) 624-7327</span></p></div><div><h5>Services</h5><a href="#services">Maintenance &amp; inspections</a><a href="#service">Repairs</a><a href="#quote">Modernization</a><a href="#quote">Installations</a></div><div><h5>Customers</h5><a href="#service">Request service</a><a href="portal.html">Customer portal</a><a href="portal.html">Pay an invoice</a><a href="#about">About Rise</a></div></div></footer>
+<div class="testmode">Test mode · demo site</div>
+<div class="toast" id="toast"></div>
+<script src="assets/data.js"></script>
+<script>
+(function(){
+var db=RISE.db,$=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+function toast(m){var x=$('#toast');x.textContent=m;x.classList.add('show');clearTimeout(x._x);x._x=setTimeout(function(){x.classList.remove('show')},3200)}
+function route(){var p=(location.hash||'#home').slice(1);if(!document.getElementById('p-'+p))p='home';document.querySelectorAll('.page').forEach(function(x){x.classList.toggle('on',x.id==='p-'+p)});window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);route();
+var bs=$('#w-bldg');bs.innerHTML=db.buildings.map(function(b){return '<option value="'+b.id+'">'+esc(b.name)+' — '+esc(b.city)+'</option>'}).join('');bs.value='B04';
+function fillUnits(){var us=db.units.filter(function(u){return u.building===bs.value});$('#w-unit').innerHTML=us.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+' · '+u.make+'</option>'}).join('');if(bs.value==='B04'&&us[1])$('#w-unit').value=us[1].id}
+bs.onchange=fillUnits;fillUnits();
+document.querySelectorAll('.urgent input').forEach(function(i){i.onchange=function(){document.querySelectorAll('.urgent label').forEach(function(l){l.classList.toggle('on',l.querySelector('input').checked)})}});
+window.sendService=function(){var p=document.querySelector('input[name=w-p]:checked').value;var r=RISE.createRequest({unit:$('#w-unit').value,name:$('#w-name').value,contact:$('#w-phone').value,source:'Website',summary:$('#w-sum').value||'Problem reported on website',priority:p});var m=r.assigned?RISE.mech(r.assigned):null;
+  $('#svc-form').innerHTML='<div class="ok-box"><div style="font-size:30px;color:var(--ok)">✓</div><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase">Request '+r.id+' received</h3><p class="muted" style="margin:6px 0 10px">'+esc(RISE.unitLabel(r.unit))+(m?' · texted to '+esc(m.name)+' ('+esc(r.assignReason)+')':' · dispatch is assigning a mechanic')+'.</p><div class="status">'+(p==='entrapment'?'ENTRAPMENT · Entrapment Clock started in dispatch · ':'')+'Text updates to '+esc($('#w-phone').value)+'</div><p class="xs faint" style="margin-top:12px">Open <a href="backoffice.html#dispatch" target="_blank">the dispatch board</a> or <a href="mechanic.html" target="_blank">the mechanic app</a> in another tab to see it arrive.</p></div>';toast('Sent to dispatch'+(m?' and '+m.name.split(' ')[0]:''))};
+window.sendQuote=function(){var l=RISE.createLead({name:$('#q-name').value,company:$('#q-co').value,email:$('#q-email').value,phone:$('#q-phone').value,territory:$('#q-terr').value,kind:$('#q-kind').value,value:(+$('#q-n').value||1)*(/Modern/.test($('#q-kind').value)?150000:/install/i.test($('#q-kind').value)?120000:/Repair/.test($('#q-kind').value)?6000:5400),note:($('#q-cur').value?'Current provider: '+$('#q-cur').value+'. ':'')+$('#q-note').value,source:'Website'});
+  $('#q-form').innerHTML='<div class="ok-box"><div style="font-size:30px;color:var(--ok)">✓</div><h3 style="font-family:var(--disp);font-size:24px;text-transform:uppercase">Thanks, '+esc($('#q-name').value.split(' ')[0])+'</h3><p class="muted" style="margin:6px 0 10px">Lead '+l.id+' is in the Rise pipeline for '+esc(RISE.terr(l.territory).name)+'. '+esc(RISE.user(l.owner).name)+' will call '+esc($('#q-phone').value)+' within one business day.</p><p class="xs faint">See it on the <a href="backoffice.html#sales" target="_blank">sales pipeline</a>.</p></div>';toast('Quote request in the pipeline')};
+})();
+</script></body></html>

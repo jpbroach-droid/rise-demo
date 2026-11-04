@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>Rise Mechanic App</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+/* Phone frame on desktop, full-bleed on a real phone. Big tap targets; works offline (queue shown). */
+body{background:#E9EBEF;display:flex;justify-content:center;align-items:flex-start;padding:24px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));min-height:100%}
+.phone{width:390px;max-width:100%;background:var(--panel);border-radius:34px;border:8px solid #1b1d22;box-shadow:0 30px 60px rgba(0,0,0,.25);overflow:hidden;position:relative;height:800px;display:flex;flex-direction:column}
+@media(max-width:480px){body{padding:0}.phone{border:0;border-radius:0;height:100vh;width:100%}}
+.statusbar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:600;background:var(--panel)}
+.hdr{padding:6px 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.hdr img{height:26px}
+.net{font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--ok-soft);color:var(--ok)}
+.net.off{background:var(--warn-soft);color:var(--warn)}
+.screen{flex:1;overflow:auto;padding:14px 16px 90px;background:var(--bg)}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:64px;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{border:0;background:none;font-size:10.5px;color:var(--ink-3);display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:500}
+.tabbar button.on{color:var(--brand)}
+.tabbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.big{font-size:17px;padding:14px;border-radius:10px;width:100%;justify-content:center;font-weight:600}
+.clockcard{background:var(--ink);color:#fff;border-radius:12px;padding:16px}
+.clockcard .t{font-family:var(--mono);font-size:30px;letter-spacing:-.02em}
+.jobcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.jobcard.ent{border-color:var(--bad);background:var(--bad-soft)}
+.task{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.task input{width:22px;height:22px;margin:0;flex:none}
+.task.done{opacity:.55;text-decoration:line-through}
+.photo{aspect-ratio:4/3;border-radius:8px;background:linear-gradient(135deg,#d8dbe0,#b9bec6);display:flex;align-items:center;justify-content:center;color:var(--ink-2);font-size:12px}
+.sheet{position:absolute;inset:0;background:var(--panel);z-index:5;display:flex;flex-direction:column}
+.sheet .screen{padding-bottom:20px}
+.q{border:1px dashed var(--line-2);border-radius:8px;padding:10px;font-size:12px;color:var(--ink-3)}
+.pv{display:flex;flex-direction:column;gap:6px}
+.offline-note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:12px}
+.hide{display:none!important}
+</style></head><body>
+<div class="phone">
+  <div class="statusbar"><span>10:42</span><span class="row" style="gap:6px"><span class="net" id="net">● Online</span><span>▮▮▮ 🔋</span></span></div>
+  <div class="hdr"><img src="assets/rise-logo.png" alt="Rise"><div class="grow"><div style="font-weight:600;line-height:1.1" id="mname">Ron Whitfield</div><div class="xs faint">Mechanic · Richmond · route R-RIC-1</div></div><button class="btn sm" id="togglenet" onclick="toggleNet()">Go offline</button></div>
+  <div class="screen" id="screen"></div>
+  <div class="tabbar">
+    <button class="on" data-t="today" onclick="tab('today')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Today</button>
+    <button data-t="month" onclick="tab('month')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Due</button>
+    <button data-t="lead" onclick="tab('lead')"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>Lead</button>
+    <button data-t="time" onclick="tab('time')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Time</button>
+  </div>
+  <div id="sheet"></div>
+</div>
+<div class="testmode">Test mode · demo data</div>
+<div class="toast" id="toast"></div>
+<script src="assets/data.js"></script>
+<script>
+(function(){
+var db=RISE.db,ME='M101',me=RISE.mech(ME),online=true,cur='today',clockedIn=true,jobClock=null,$=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(function(){t.classList.remove('show')},2600)}
+window.toggleNet=function(){online=!online;$('#net').textContent=online?'● Online':'○ Offline';$('#net').classList.toggle('off',!online);$('#togglenet').textContent=online?'Go offline':'Back online';if(online&&db.offlineQueue.length){var n=db.offlineQueue.length;db.offlineQueue.forEach(function(q){RISE.log(me.name,'Mechanic app (synced)',q)});db.offlineQueue=[];RISE.save();toast('Synced '+n+' queued entr'+(n>1?'ies':'y'))}render()};
+function queueOrSave(msg){if(online){RISE.log(me.name,'Mechanic app',msg);RISE.save()}else{db.offlineQueue.push(msg);RISE.save();toast('Saved on device — will sync when back online')}}
+window.tab=function(t){cur=t;document.querySelectorAll('.tabbar button').forEach(function(b){b.classList.toggle('on',b.dataset.t===t)});render()};
+function myCalls(){return db.calls.filter(function(c){return c.assigned===ME&&c.status!=='complete'})}
+function render(){db=RISE.db;var h='';
+  if(!online)h+='<div class="offline-note" style="margin-bottom:10px">Offline · everything you enter is kept on this phone'+(db.offlineQueue.length?' · '+db.offlineQueue.length+' waiting to sync':'')+'</div>';
+  if(cur==='today'){
+    h+='<div class="clockcard"><div class="row between"><div><div class="xs" style="opacity:.7">'+(clockedIn?'On the clock since 6:58a':'Not clocked in')+'</div><div class="t" id="dayclock">3:44:10</div></div><button class="btn big" style="width:auto;background:'+(clockedIn?'#fff':'var(--brand)')+';color:'+(clockedIn?'var(--ink)':'#fff')+';border:0" onclick="clockDay()">'+(clockedIn?'Clock out':'Clock in')+'</button></div><div class="xs" style="opacity:.7;margin-top:8px">Travel today 0:52 · tracked automatically between stops</div></div>';
+    var cs=myCalls();
+    cs.forEach(function(c){var u=RISE.unit(c.unit),b=RISE.bldg(c.building);h+='<div class="jobcard'+(c.priority==='entrapment'?' ent':'')+'" style="margin-top:12px"><div class="row between"><span class="pill '+(c.priority==='entrapment'?'bad':c.priority==='down'?'warn':'')+'">'+(c.priority==='entrapment'?'ENTRAPMENT':c.priority==='down'?'Unit down':'Callback')+'</span><span class="xs num faint">'+RISE.fmtTime(c.received)+'</span></div><div style="font-weight:600;margin:4px 0">'+esc(b.name)+' · '+esc(u.name)+'</div><div class="small muted">'+esc(c.summary)+'</div><div class="xs faint">'+esc(b.address)+', '+esc(b.city)+' · '+u.make+' '+u.model+'</div>'+(c.ack?'<div class="row" style="margin-top:10px"><span class="pill ok">Acked · ETA '+c.eta+'</span><button class="btn sm" onclick="openJob(\''+c.id+'\',\'call\')">On site → tasks</button></div>':'<div class="row" style="margin-top:10px"><button class="btn primary big" style="flex:1" onclick="ack(\''+c.id+'\')">Got it · ETA 10 min</button><button class="btn big" style="width:auto" onclick="ackCustom(\''+c.id+'\')">Other ETA</button></div>')+'</div>'});
+    var vs=db.visits.filter(function(v){return v.mechanic===ME&&v.date===RISE.today});
+    var fallback=db.visits.filter(function(v){return v.mechanic===ME&&v.status==='scheduled'}).slice(0,3);
+    h+='<h3 style="margin:16px 0 8px">Route today</h3>'+(vs.length?vs:fallback).map(function(v){var u=RISE.unit(v.unit),b=RISE.bldg(v.building);return '<div class="jobcard" onclick="openJob(\''+v.id+'\',\'pm\')"><div class="row between"><b>'+esc(b.name)+' · '+esc(u.name)+'</b><span class="pill '+(v.status==='complete'?'ok':'')+'">'+(v.status==='complete'?'Done':v.estHours+' h')+'</span></div><div class="xs faint">'+esc(v.kind)+' · '+esc(b.city)+' · '+u.make+' '+u.model+'</div></div>'}).join('');
+  }
+  if(cur==='month'){var vs=db.visits.filter(function(v){return v.mechanic===ME});var done=vs.filter(function(v){return v.status==='complete'}).length;
+    h+='<div class="jobcard"><div class="row between"><b>November</b><span class="num">'+done+' / '+vs.length+'</span></div><div class="bar" style="margin-top:8px"><i class="ok" style="width:'+(done/vs.length*100)+'%"></i></div><div class="xs faint" style="margin-top:6px">'+vs.reduce(function(s,v){return s+v.estHours},0).toFixed(1)+' route hours loaded · 2 tests with AHJ this month</div></div>';
+    h+=vs.sort(function(a,b){return a.date<b.date?-1:1}).map(function(v){var u=RISE.unit(v.unit),b=RISE.bldg(v.building);var ins=db.inspections.filter(function(i){return i.unit===v.unit&&i.mechanic===ME})[0];return '<div class="jobcard" onclick="openJob(\''+v.id+'\',\'pm\')"><div class="row between"><span class="num small">'+RISE.fmtDate(v.date,{weekday:'short',month:'short',day:'numeric'})+'</span><span class="pill '+(v.status==='complete'?'ok':v.status==='in progress'?'info':'')+'">'+v.status+'</span></div><b>'+esc(b.name)+' · '+esc(u.name)+'</b><div class="xs faint">'+esc(v.kind)+' · '+v.estHours+' h'+(ins?' · <span style="color:var(--warn)">'+ins.test+' with '+esc(RISE.ahj(ins.ahj).name)+' '+(ins.confirmed?RISE.fmtDate(ins.confirmed):'(unbooked)')+'</span>':'')+'</div></div>'}).join('');
+  }
+  if(cur==='lead'){h+='<h3 style="margin-bottom:4px">Send a sales lead</h3><p class="hint" style="margin-bottom:12px">Saw something worth quoting? One photo and a sentence. Sales gets it, and you get credit when it sells.</p><div class="pv"><select id="ld-unit">'+db.units.filter(function(u){return u.territory===me.territory}).map(function(u){return '<option value="'+u.id+'">'+esc(RISE.unitLabel(u.id))+'</option>'}).join('')+'</select><div class="photo" onclick="toast(\'Camera opens here — photo attaches to the lead\')">📷 Tap to add photo (optional)</div><textarea id="ld-note" rows="3" placeholder="e.g. Door operator obsolete, parts no longer available"></textarea><div class="row"><label class="chip"><input type="radio" name="lk" value="Repair" checked> Repair</label><label class="chip"><input type="radio" name="lk" value="Modernization"> Mod</label><label class="chip"><input type="radio" name="lk" value="Safety"> Safety</label></div><button class="btn primary big" onclick="sendLead()">Send to sales</button></div>';
+    h+='<h3 style="margin:18px 0 8px">Your leads</h3>'+db.fieldLeads.filter(function(f){return f.mechanic===ME}).map(function(f){return '<div class="jobcard"><div class="row between"><span class="small">'+esc(RISE.unitLabel(f.unit))+'</span><span class="pill '+(f.status==='Sold'?'ok':f.status==='Proposed'?'info':'warn')+'">'+f.status+(f.value?' · '+RISE.money(f.value):'')+'</span></div><div class="xs muted">'+esc(f.note)+'</div></div>'}).join('');
+  }
+  if(cur==='time'){var t=db.timeEntries.filter(function(x){return x.mechanic===ME}).sort(function(a,b){return a.date<b.date?1:-1}).slice(0,7);
+    h+='<div class="jobcard"><b>This week</b><div class="grid g3" style="margin-top:8px"><div class="stat"><span class="v" style="font-size:18px">'+t.reduce(function(s,x){return s+x.work},0).toFixed(1)+'</span><span class="l">work hrs</span></div><div class="stat"><span class="v" style="font-size:18px">'+t.reduce(function(s,x){return s+x.travel},0).toFixed(1)+'</span><span class="l">travel</span></div><div class="stat"><span class="v" style="font-size:18px">'+t.reduce(function(s,x){return s+x.ot},0).toFixed(1)+'</span><span class="l">OT</span></div></div></div>';
+    h+=t.map(function(x){return '<div class="jobcard"><div class="row between"><span class="num small">'+RISE.fmtDate(x.date,{weekday:'short',month:'short',day:'numeric'})+'</span><span class="num small">'+x.work+'h + '+x.travel+'h travel'+(x.ot?' + '+x.ot+' OT':'')+'</span></div><div class="xs faint">'+esc(x.kind)+(x.job?' · '+x.job:'')+(x.territory!==x.homeTerritory?' · <span style="color:var(--warn)">worked in '+x.territory+'</span>':'')+'</div></div>'}).join('');
+    h+='<p class="hint" style="margin-top:8px">Hours go to payroll (ADP) and to each job\'s cost. Nothing blocks clock-out.</p>';
+  }
+  $('#screen').innerHTML=h;
+}
+window.clockDay=function(){clockedIn=!clockedIn;queueOrSave(clockedIn?'Clocked in for the day':'Clocked out for the day');render();toast(clockedIn?'Clocked in':'Clocked out · 8.2 h to payroll')};
+window.ack=function(id,eta){var c=RISE.find('calls',id);c.ack=RISE.nowStamp();c.eta=eta||'10:52';c.status='en route';queueOrSave('Acknowledged '+id+' · ETA '+c.eta+' · customer texted');render();toast('Office + customer notified · ETA '+c.eta)};
+window.ackCustom=function(id){$('#sheet').innerHTML='<div class="sheet"><div class="hdr"><button class="btn sm" onclick="closeSheet()">‹ Back</button><b>Your ETA</b></div><div class="screen"><div class="pv">'+['15 min','30 min','45 min','1 hour','Can\'t take it — send backup'].map(function(e){return '<button class="btn big" onclick="'+(e[0]==='C'?'bounce(\''+id+'\')':'ack(\''+id+'\',\''+e+'\');closeSheet()')+'">'+e+'</button>'}).join('')+'</div></div></div>'};
+window.bounce=function(id){var c=RISE.find('calls',id);c.assigned='M103';c.assignReason='Declined by Ron — backup';c.status='awaiting ack';queueOrSave('Declined '+id+' — rerouted to Luis Ortega, office alerted');closeSheet();render();toast('Sent to Luis · office alerted')};
+window.closeSheet=function(){$('#sheet').innerHTML=''};
+window.openJob=function(id,kind){var v=kind==='pm'?RISE.find('visits',id):RISE.find('calls',id);var u=RISE.unit(v.unit),b=RISE.bldg(v.building);var tasks=kind==='pm'?v.tasks:['Free entrapped passengers (if any) & confirm safe','Identify fault · pull controller log','Correct & test run 3 cycles','Verify door operation & leveling','Return to service · photo of car in service'];
+  var done=v._done||{};
+  var h='<div class="sheet"><div class="hdr"><button class="btn sm" onclick="closeSheet()">‹ Back</button><div class="grow"><b>'+esc(b.name)+' · '+esc(u.name)+'</b><div class="xs faint">'+u.make+' '+u.model+' · '+u.type+' · '+u.year+' · state ID '+u.stateId+'</div></div></div><div class="screen">';
+  h+='<div class="row" style="margin-bottom:12px"><button class="btn '+(jobClock===id?'dark':'primary')+' big" style="flex:1" onclick="jobClockToggle(\''+id+'\')">'+(jobClock===id?'■ Stop job clock · 0:38':'▶ Start job clock')+'</button><button class="btn big" style="width:auto" onclick="toast(\'MCP log opened — last 12 months of entries for this unit\')">MCP</button></div>';
+  if(u.callbacks90>=3)h+='<div class="offline-note" style="margin-bottom:10px;background:var(--bad-soft);color:var(--bad)">Callback Watch · '+u.callbacks90+' callbacks in 90 days on this unit. Note root cause on close-out.</div>';
+  h+='<h3>'+(kind==='pm'?v.kind:'Callback')+' tasks</h3>'+tasks.map(function(t,i){return '<label class="task'+(done[i]?' done':'')+'"><input type="checkbox" '+(done[i]?'checked':'')+' onchange="tick(\''+id+'\',\''+kind+'\','+i+',this.checked)"><span>'+esc(t)+'</span></label>'}).join('');
+  if(kind==='pm')h+='<div class="row" style="margin-top:12px;gap:8px"><div class="field grow"><label>Hydraulic oil added (qt)</label><input value="0" inputmode="decimal"></div><div class="field grow"><label>Fire service test</label><select><option>Pass</option><option>Fail</option></select></div></div>';
+  h+='<div class="field" style="margin-top:12px"><label>Notes</label><textarea rows="2" placeholder="What you found, what you did"></textarea></div><div class="row" style="margin-top:10px"><div class="photo grow" onclick="toast(\'Photo attached to this visit\')">📷 Add photo</div><div class="photo grow" onclick="toast(\'PlateScan read: '+u.make+' · '+u.model+' · cap '+u.capacity+' lb\')">🔍 PlateScan data plate</div></div>';
+  h+='<div class="pv" style="margin-top:14px"><button class="btn primary big" onclick="closeOut(\''+id+'\',\''+kind+'\')">Close out · '+(kind==='pm'?'update MCP log':'unit back in service')+'</button><button class="btn big" onclick="repairReq(\''+id+'\')">Create repair request for office</button><button class="btn big" onclick="tab(\'lead\');closeSheet()">Send sales lead from this unit</button></div></div></div>';
+  $('#sheet').innerHTML=h;
+};
+window.tick=function(id,kind,i,v){var o=kind==='pm'?RISE.find('visits',id):RISE.find('calls',id);o._done=o._done||{};o._done[i]=v;RISE.save()};
+window.jobClockToggle=function(id){jobClock=jobClock===id?null:id;queueOrSave((jobClock?'Started':'Stopped')+' job clock on '+id);openJob(id,id[0]==='P'?'pm':'call')};
+window.closeOut=function(id,kind){if(kind==='pm'){var v=RISE.find('visits',id);v.status='complete';db.mcp.unshift({unit:v.unit,date:RISE.today,by:ME,task:v.kind+' — all tasks complete',result:'Pass'});queueOrSave('Closed PM '+id+' · MCP log updated · customer completion email sent')}else{var c=RISE.find('calls',id);c.status='complete';var u=RISE.unit(c.unit);u.status='running';u.callbacks90++;db.mcp.unshift({unit:c.unit,date:RISE.today,by:ME,task:'Callback — '+c.summary,result:'Returned to service'});queueOrSave('Closed '+id+' · unit back in service · customer notified')}closeSheet();render();toast('Closed · office and customer updated')};
+window.repairReq=function(id){var o=RISE.find('visits',id)||RISE.find('calls',id);var f={id:RISE.nextId('FX-','findings'),unit:o.unit,building:o.building,source:'PM visit — '+me.name,kind:'Mechanic finding',item:'Repair needed — see photo and notes',correctBy:RISE.addDays(RISE.today,30),status:'New',proposal:null,amount:null};db.findings.unshift(f);queueOrSave('Repair request '+f.id+' sent to office (FixFlow)');closeSheet();toast('Repair request sent — office will quote it')};
+window.sendLead=function(){var u=$('#ld-unit').value,note=$('#ld-note').value||'Worth a look — see photo';var kind=document.querySelector('input[name=lk]:checked').value;var f={id:RISE.nextId('FL-','fieldLeads'),mechanic:ME,unit:u,building:RISE.unit(u).building,date:RISE.today,note:note,photo:true,status:'New',proposal:null,value:null};db.fieldLeads.unshift(f);db.leads.unshift({id:RISE.nextId('LD-','leads'),company:RISE.bldg(f.building).name,contact:RISE.cust(RISE.unit(u).customer).contact,territory:RISE.unit(u).territory,stage:'New',value:0,kind:kind,source:'Field lead — '+me.name.split(' ')[0],owner:'U7',next:'Quote from mechanic photo',isNew:true});queueOrSave('Field lead '+f.id+' sent to sales: '+note);$('#ld-note').value='';render();toast('Sent to sales · tracked under your name')};
+var secs=3*3600+44*60+10;setInterval(function(){secs++;var e=document.getElementById('dayclock');if(e&&clockedIn){var h=Math.floor(secs/3600),m=Math.floor(secs%3600/60),s=secs%60;e.textContent=h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s}},1000);
+RISE.onChange(function(){if(!document.querySelector('.sheet'))render()});
+render();
+})();
+</script></body></html>

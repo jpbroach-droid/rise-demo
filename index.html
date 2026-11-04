@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>RiseOS Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+body{background:#F2F3F6}
+.wrap{max-width:1100px;margin:0 auto;padding:36px max(16px,env(safe-area-inset-right,0px)) 70px max(16px,env(safe-area-inset-left,0px))}
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:center;margin-bottom:34px}
+@media(max-width:800px){.hero{grid-template-columns:1fr}}
+h1{font-size:34px;line-height:1.1;letter-spacing:-.02em}
+h1 span{color:var(--brand)}
+.lede{font-size:17px;color:var(--ink-2);max-width:58ch;margin:14px 0 18px}
+.surfaces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:860px){.surfaces{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.surfaces{grid-template-columns:1fr}}
+.sf{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;text-decoration:none;color:var(--ink);display:flex;flex-direction:column;gap:6px;min-height:160px;position:relative}
+.sf:hover{border-color:var(--ink-3);box-shadow:var(--shadow)}
+.sf .who{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-ink);font-weight:600}
+.sf h3{font-size:17px}
+.sf p{font-size:13px;color:var(--ink-2)}
+.sf .go{margin-top:auto;font-weight:600;font-size:13px;color:var(--brand-ink)}
+.script{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 22px;margin-top:30px}
+.script ol{margin:10px 0 0;padding-left:22px;display:grid;gap:10px;font-size:14px}
+.script li b{display:block}
+.feat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:30px}
+@media(max-width:860px){.feat{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.feat{grid-template-columns:1fr}}
+.feat div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:13px}
+.feat b{display:block;font-family:var(--mono);font-size:12.5px;color:var(--brand-ink);margin-bottom:3px}
+.logo-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:30px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.logo-card img{height:90px}
+</style></head><body>
+<div class="wrap">
+  <div class="hero"><div><div class="monopole">Monopole Labs · interactive demo · built for Rise Elevator Services</div><h1>One system for Rise: <span>sales, dispatch, the field, the money.</span></h1><p class="lede">This is a working mock of RiseOS. Six screens share one set of demo data, so what you do on one shows up on the others. Report a car down on the website and watch it hit the dispatch board and Ron's phone. Sign a proposal and the job appears in Draw Builder. Nothing here is real; reset any time.</p><div class="row"><a class="btn primary" href="backoffice.html">Open the office</a><a class="btn" href="website.html">Start on the website</a><button class="btn ghost" onclick="RISE.reset();location.reload()">Reset demo data</button></div></div>
+    <div class="logo-card"><img src="assets/rise-logo.png" alt="Rise Elevator"><div class="small muted">Richmond, VA · 4 territories · 15 mechanics · 304 units under agreement (demo figures)</div><div class="row small"><span class="pill RIC">RIC</span><span class="pill NOVA">NOVA</span><span class="pill DCMD">DCMD</span><span class="pill HR">HR</span></div></div></div>
+
+  <h2 style="margin-bottom:10px">The six screens</h2>
+  <div class="surfaces">
+    <a class="sf" href="website.html"><span class="who">Public · riseelevator.com</span><h3>The new website</h3><p>Request-service and get-a-quote forms post straight into dispatch and the pipeline. Nothing is re-keyed.</p><span class="go">Open website →</span></a>
+    <a class="sf" href="backoffice.html"><span class="who">Office · owners, dispatch, sales, finance</span><h3>RiseOS back office</h3><p>Today, dispatch, compliance, proposals, jobs, Crossover Ledger, finance, reports. Sign in as James, Marcus, Dana or Keisha to see scoping.</p><span class="go">Open office →</span></a>
+    <a class="sf" href="mechanic.html"><span class="who">Field · Ron Whitfield's phone</span><h3>Mechanic app</h3><p>Clock in, route, callbacks with one-tap ack and ETA, task close-out into the MCP log, photo leads to sales. Toggle offline.</p><span class="go">Open app →</span></a>
+    <a class="sf" href="portal.html"><span class="who">Customer · Tysons Gateway Office Trust</span><h3>Customer portal</h3><p>Units, history, test dates, findings to approve, proposals to sign, invoices to pay. Portfolio, building or single unit.</p><span class="go">Open portal →</span></a>
+    <a class="sf" href="proposal.html?id=P-7709"><span class="who">Customer · from an email or text link</span><h3>Proposal sign-and-pay</h3><p>Good/better/best, terms pinned to a version, signature, billing capture. Opens and forwards are tracked back in the office.</p><span class="go">Open proposal →</span></a>
+    <a class="sf" href="inspector.html?id=IN-611"><span class="who">AHJ · City of Richmond inspector</span><h3>Inspection Booker</h3><p>The inspector picks from the mechanic's open dates or counters. Reminders run until it's confirmed.</p><span class="go">Open booking link →</span></a>
+  </div>
+
+  <div class="script"><h2>A five-minute walk-through</h2><ol>
+    <li><b>Website → dispatch.</b> On the website, Request service, choose "Out of service" at Capitol Square Tower, send. Open the office: it's on the dispatch board, auto-routed to Ron, with the ack timer running.</li>
+    <li><b>Mechanic ack.</b> In the mechanic app, tap "Got it · ETA 10 min." Back in the office the card moves to en route; in the portal the customer sees the ETA.</li>
+    <li><b>Entrapment Clock.</b> On Today, the live clock for SC-8841. Nothing on the screen is louder.</li>
+    <li><b>Crossover Ledger.</b> Gary (Hampton Roads, Marcus's territory) worked two days on the Capitol Square mod (Richmond, James's). The ledger shows what James owes Marcus at loaded cost, and the same hours sit on the job.</li>
+    <li><b>Estimate → proposal → job.</b> Sales → "New estimate". Cost it at loaded rates, submit, approve as Tom, send, sign it on the proposal page. The job shows up in Draw Builder with the estimate as its budget, and Performance to estimate tracks actuals against it.</li>
+    <li><b>Mechanic utilization.</b> Hours split maintenance / callback / repair / project per mechanic, and route margin: who has room to carry more units, whose route is being eaten by callbacks.</li>
+    <li><b>FixFlow.</b> Compliance → findings. Draft a quote from a Richmond citation; it lands in Sales awaiting Tom's approval, then goes out as a sign-and-pay link.</li>
+    <li><b>Sign a proposal.</b> Open the Bon Air modernization proposal, pick "Best," sign, submit. The pipeline card moves to Won and a job appears in Draw Builder.</li>
+    <li><b>Scoped reports.</b> Switch to Marcus Hale in the office. He sees Hampton Roads only.</li>
+  </ol></div>
+
+  <h2 style="margin:30px 0 10px">What's named in the demo</h2>
+  <div class="feat">
+    <div><b>Entrapment Clock</b>Trapped-passenger calls get a running timer, their own escalation and automatic customer updates.</div>
+    <div><b>Callback Watch</b>3+ callbacks on a unit in 90 days opens a review and a sales lead.</div>
+    <div><b>Crossover Ledger</b>Mechanic hours worked outside their home territory, at actual loaded cost, settled owner to owner.</div>
+    <div><b>FixFlow</b>Citations, test deficiencies and mechanic findings become priced quotes with the correction deadline attached.</div>
+    <div><b>Inspection Booker</b>Sends the AHJ open dates, chases replies, accepts counters, needs office approval for changes.</div>
+    <div><b>TestTrack</b>Cat 1 / 3 / 5 due dates and the AHJ for every unit.</div>
+    <div><b>Certificate Watch</b>Certificate-of-operation expirations with renewal paperwork queued.</div>
+    <div><b>MCP Log</b>Digital maintenance control program per unit, written from the mechanic app.</div>
+    <div><b>Draw Builder</b>Progress billing in G702/G703 form with retainage, change orders and lien waivers.</div>
+    <div><b>ModRadar</b>Scores every unit for modernization and forecasts the pipeline.</div>
+    <div><b>Stockroom</b>Parts across trucks, shops and on-order, tied to jobs and POs.</div>
+    <div><b>PlateScan</b>Photograph the data plate; make, model and capacity fill in.</div>
+    <div><b>Renewal Radar</b>Expiring terms, convenience-cancel agreements and escalations not yet applied.</div>
+    <div><b>Field leads</b>A photo and a sentence from the mechanic, tracked to what sells.</div>
+    <div><b>Estimate builder</b>Loaded labor rates and real part costs become the price the customer sees and the budget the job is tracked against.</div>
+    <div><b>Route profitability</b>Maintenance revenue on each mechanic's units against their maintenance, callback and travel hours.</div>
+    <div><b>Proposal tracking</b>Opens, time on page, forwards and signatures back on the proposal.</div>
+  </div>
+  <p class="monopole" style="margin-top:34px">Monopole Labs · Johnson City, TX · Test-mode demo. All customers, buildings, people and dollar figures are placeholders. Union rates are holding values.</p>
+</div>
+<script src="assets/data.js"></script>
+</body></html>

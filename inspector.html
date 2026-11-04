@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>Rise Inspection Booking</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+body{background:#ECEEF2}
+.doc{max-width:620px;margin:24px auto 60px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:22px max(24px,env(safe-area-inset-right,0px)) 26px max(24px,env(safe-area-inset-left,0px))}
+.slot{display:flex;justify-content:space-between;align-items:center;border:2px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer}
+.slot.on{border-color:var(--brand);background:var(--brand-soft)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:12px;text-align:center}
+.cal div{padding:7px 0;border-radius:4px}
+.cal .d{background:var(--bg);cursor:pointer}.cal .d.free{background:var(--ok-soft);color:var(--ok);font-weight:600}.cal .d.on{background:var(--brand);color:#fff}.cal .d.x{opacity:.35;cursor:default}
+</style></head><body>
+<div class="doc" id="doc"></div>
+<div class="testmode">Test mode · demo data</div>
+<div class="toast" id="toast"></div>
+<script src="assets/data.js"></script>
+<script>
+(function(){
+var db=RISE.db,$=function(s){return document.querySelector(s)},fd=RISE.fmtDate;
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+function toast(m){var x=$('#toast');x.textContent=m;x.classList.add('show');clearTimeout(x._x);x._x=setTimeout(function(){x.classList.remove('show')},2600)}
+var iid=(location.search.match(/id=(IN-\d+)/)||[])[1]||'IN-611';var ins=RISE.find('inspections',iid)||db.inspections[0];var sel=null,alt=null,mode='pick';
+function render(){var u=RISE.unit(ins.unit),b=RISE.bldg(ins.building),a=RISE.ahj(ins.ahj),m=RISE.mech(ins.mechanic);var h='<div class="row between" style="margin-bottom:14px"><img src="assets/rise-logo.png" alt="Rise Elevator" style="height:40px"><span class="eyebrow">Inspection scheduling</span></div>';
+  h+='<h1 style="margin-bottom:6px">'+esc(ins.test)+' · '+esc(b.name)+'</h1><p class="muted" style="margin-bottom:14px">Hello '+esc(a.contact)+' ('+esc(a.name)+'). Rise Elevator requests an inspection date for the unit below. Mechanic '+esc(m.name)+' will meet you on site.</p>';
+  h+='<dl class="kv" style="margin-bottom:16px"><dt>Address</dt><dd>'+esc(b.address)+', '+esc(b.city)+'</dd><dt>Unit</dt><dd>'+esc(u.name)+' · state ID <span class="num">'+u.stateId+'</span> · '+u.make+' '+u.model+' · '+u.type+'</dd><dt>Test</dt><dd>'+esc(ins.test)+(ins.test.indexOf('Cat 5')===0?' · full-load, 125% rated load, with safeties':ins.test.indexOf('Cat 1')===0?' · no-load safety and governor, Phase I/II':'')+'</dd><dt>Reference</dt><dd class="num">'+ins.id+'</dd></dl>';
+  if(ins.status==='Confirmed'){h+='<div class="card" style="background:var(--ok-soft);border-color:#BFE3D0;text-align:center"><div style="font-size:26px">✓</div><b>Confirmed for '+fd(ins.confirmed,{weekday:'long',month:'long',day:'numeric'})+' at '+ins.confirmed.slice(11)+'</b><div class="small muted" style="margin-top:4px">Calendar invite sent. '+esc(m.name.split(' ')[0])+' will have the unit ready 30 minutes before.</div></div><p class="hint" style="margin-top:14px">Need to change it? <a href="#" onclick="change();return false">Request a change</a>'+(ins.approvalForChanges?' — Rise\'s office approves changes to confirmed dates.':'')+'</p>'}
+  else if(mode==='pick'){h+='<h3 style="margin-bottom:8px">Pick a time that works</h3><div class="stack" style="margin-bottom:14px">'+ins.proposed.map(function(p,i){return '<div class="slot'+(sel===i?' on':'')+'" onclick="pick('+i+')"><span><b>'+fd(p,{weekday:'long',month:'long',day:'numeric'})+'</b><br><span class="small muted">'+p.slice(11)+' · about 2 hours</span></span><span class="pill ok">open</span></div>'}).join('')+'</div><div class="row"><button class="btn primary" onclick="confirm_()" '+(sel===null?'disabled':'')+'>Confirm this date</button><button class="btn" onclick="mode=\'alt\';render()">None of these work</button></div>'}
+  else{h+='<h3 style="margin-bottom:4px">Suggest another date</h3><p class="hint" style="margin-bottom:10px">Green days are open on '+esc(m.name.split(' ')[0])+'\'s calendar for this building. Pick one and Rise confirms, or type a note.</p><div class="cal" id="cal">'+['S','M','T','W','T','F','S'].map(function(x){return '<div class="faint">'+x+'</div>'}).join('');
+    var start=RISE.addDays(RISE.today,-(new Date(2026,10,4).getDay()));for(var i=0;i<28;i++){var dd=RISE.addDays(start,i);var dow=new Date(dd+'T12:00').getDay();var past=dd<=RISE.today;var free=!past&&dow>0&&dow<6&&(i%3!==1);h+='<div class="d'+(past||!free?' x':' free')+(alt===dd?' on':'')+'" '+(free?'onclick="altPick(\''+dd+'\')"':'')+'>'+(+dd.slice(8))+'</div>'}
+    h+='</div><div class="field" style="margin-top:12px"><label>Preferred time / note</label><input id="alt-note" value="Morning preferred"></div><div class="row" style="margin-top:12px"><button class="btn primary" onclick="sendAlt()" '+(alt?'':'disabled')+'>Propose '+(alt?fd(alt,{weekday:'short',month:'short',day:'numeric'}):'date')+'</button><button class="btn" onclick="mode=\'pick\';render()">Back</button></div>'}
+  h+='<p class="xs faint" style="margin-top:20px">Questions: Rise Elevator Services dispatch, (804) 624-7327 · dispatch@riseelevator.example.com. This link is unique to '+esc(a.name)+'.</p>';
+  $('#doc').innerHTML=h}
+window.pick=function(i){sel=i;render()};window.altPick=function(d){alt=d;render()};
+window.confirm_=function(){ins.confirmed=ins.proposed[sel];ins.status='Confirmed';ins.nextReminder=null;RISE.log(RISE.ahj(ins.ahj).name,'Inspection Booker','Confirmed '+ins.id+' for '+fd(ins.confirmed)+' '+ins.confirmed.slice(11)+' · mechanic calendar + customer updated');RISE.save();render();toast('Confirmed · Rise and the building owner notified')};
+window.sendAlt=function(){ins.counter=alt+' '+($('#alt-note').value.indexOf('Morning')>-1?'09:00':'13:00');ins.status='Change requested';RISE.log(RISE.ahj(ins.ahj).name,'Inspection Booker','Proposed '+fd(alt)+' for '+ins.id+' instead — office to accept or counter');RISE.save();mode='pick';render();toast('Sent — Rise will confirm or counter shortly');$('#doc').insertAdjacentHTML('afterbegin','<div class="card" style="margin-bottom:12px;background:var(--info-soft);border-color:#C7D8F2">Your suggestion of <b>'+fd(alt,{weekday:'long',month:'long',day:'numeric'})+'</b> went to Rise\'s office. You\'ll get a confirmation email.</div>')};
+window.change=function(){ins.status='Change requested';ins.counter=RISE.addDays(ins.confirmed.slice(0,10),3)+' 09:00';RISE.log(RISE.ahj(ins.ahj).name,'Inspection Booker','Requested a change to confirmed '+ins.id+' — needs office approval');RISE.save();mode='alt';alt=null;render();toast('Change request opened — needs office approval')};
+render();
+})();
+</script></body></html>
