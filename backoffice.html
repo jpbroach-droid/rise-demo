@@ -59,6 +59,12 @@
 .split{display:flex;gap:6px;flex-wrap:wrap}
 .split span{font-size:11px;padding:2px 6px;border-radius:4px;background:var(--line)}
 .ro{opacity:.55;pointer-events:none}
+.chips4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.chips4 .chip{justify-content:center;padding:10px 8px;text-align:center}
+.chips4 .chip input{width:16px;height:16px;margin:0}
+.chips4 .chip.ent{border-color:#F3C9BF;color:var(--bad)}
+.chips4 .chip.ent.on{background:var(--bad-soft);border-color:var(--bad)}
+@media(max-width:560px){.chips4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .q{background:var(--panel);border:1px dashed var(--line-2);border-radius:var(--r);padding:12px;text-align:center;color:var(--ink-3);font-size:13px}
 .pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 @media(max-width:1100px){.pipe{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -126,7 +132,7 @@ var db=RISE.db, $=function(s){return document.querySelector(s)}, money=RISE.mone
 var me=db.office[2], scope='ALL';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(function(){t.classList.remove('show')},2600)}
-function tp(id){return '<span class="pill '+id+'">'+id+'</span>'}
+function tp(id){var t=RISE.terr(id);return '<span class="pill '+id+'" title="'+(t?t.name:id)+'">'+id+'</span>'}
 function inScope(t){ if(me.scope!=='ALL' && me.scope.indexOf(t)<0) return false; return scope==='ALL'||scope===t }
 function allowed(){ return me.scope==='ALL'?db.territories.map(function(t){return t.id}):me.scope }
 function mech(id){var m=RISE.mech(id);return m?m.name:'Unassigned'}
@@ -142,7 +148,7 @@ function renderMe(){
   $('#me-av').textContent=me.name.split(' ').map(function(x){return x[0]}).join('');$('#me-name').textContent=me.name;
   $('#me-role').textContent=me.role+' · '+(me.scope==='ALL'?'all territories':me.scope.join(', ')+' only');
   var sc=$('#scope'); var ts=allowed();
-  sc.innerHTML=(ts.length>1?'<button class="'+(scope==='ALL'?'on':'')+'" data-s="ALL">All</button>':'')+ts.map(function(t){return '<button class="'+(scope===t?'on':'')+'" data-s="'+t+'">'+t+'</button>'}).join('');
+  sc.innerHTML=(ts.length>1?'<button class="'+(scope==='ALL'?'on':'')+'" data-s="ALL">All</button>':'')+ts.map(function(t){return '<button class="'+(scope===t?'on':'')+'" data-s="'+t+'" title="'+RISE.terr(t).name+'">'+t+'</button>'}).join('');
   sc.querySelectorAll('button').forEach(function(b){b.onclick=function(){scope=b.dataset.s;renderMe();renderAll()}});
 }
 
@@ -266,10 +272,11 @@ window.quickIntake=function(){
   +'<div class="stack"><div class="field"><label>Unit</label><select id="qi-unit">'+us.map(function(u){return '<option value="'+u.id+'">'+esc(ulabel(u.id))+' — '+u.make+'</option>'}).join('')+'</select></div>'
   +'<div class="grid g2"><div class="field"><label>Caller</label><input id="qi-name" value="Front desk"></div><div class="field"><label>Source</label><select id="qi-src"><option>Phone</option><option>Text</option><option>Email</option><option>Answering service</option></select></div></div>'
   +'<div class="field"><label>What\'s wrong</label><input id="qi-sum" placeholder="e.g. Car 2 stuck at lobby, doors open"></div>'
-  +'<div class="row"><label class="chip"><input type="radio" name="qi-p" value="routine" checked> Routine</label><label class="chip"><input type="radio" name="qi-p" value="down"> Unit down</label><label class="chip" style="border-color:var(--bad)"><input type="radio" name="qi-p" value="entrapment"> Entrapment</label><label class="chip"><input type="checkbox" id="qi-ah"> After hours</label></div>'
-  +'<div class="row" style="justify-content:flex-end"><button class="btn primary" onclick="submitIntake()">Create &amp; auto-route</button></div></div>');
+  +'<div class="field"><label>Priority</label><div class="chips4"><label class="chip on"><input type="radio" name="qi-p" value="routine" checked onchange="chipSync(this)"> Routine</label><label class="chip"><input type="radio" name="qi-p" value="down" onchange="chipSync(this)"> Unit down</label><label class="chip ent"><input type="radio" name="qi-p" value="entrapment" onchange="chipSync(this)"> Entrapment</label><label class="chip"><input type="checkbox" id="qi-ah" onchange="this.parentNode.classList.toggle(\'on\',this.checked)"> After hours</label></div></div>'
+  +'<div class="row" style="justify-content:flex-end"><button class="btn" onclick="submitIntake(false)">Create &amp; dispatch manually</button><button class="btn primary" onclick="submitIntake(true)">Create &amp; auto-route</button></div></div>');
 };
-window.submitIntake=function(){var p=document.querySelector('input[name=qi-p]:checked').value;var c=RISE.createRequest({unit:$('#qi-unit').value,name:$('#qi-name').value,source:$('#qi-src').value,summary:$('#qi-sum').value||'Service requested',priority:p,afterHours:$('#qi-ah').checked});closeModal();toast((c.assigned?'Routed to '+mech(c.assigned)+' — SMS sent':'Created — needs a mechanic'));renderAll();go('dispatch')};
+window.chipSync=function(i){document.querySelectorAll('.chips4 label').forEach(function(l){var x=l.querySelector('input');if(x.type==='radio')l.classList.toggle('on',x.checked)})};
+window.submitIntake=function(auto){var p=document.querySelector('input[name=qi-p]:checked').value;var c=RISE.createRequest({unit:$('#qi-unit').value,name:$('#qi-name').value,source:$('#qi-src').value,summary:$('#qi-sum').value||'Service requested',priority:p,afterHours:$('#qi-ah').checked,autoAssign:auto});closeModal();renderAll();go('dispatch');if(auto){toast(c.assigned?'Routed to '+mech(c.assigned)+' — SMS sent':'Created — needs a mechanic')}else{openCall(c.id)}};
 
 /* ---------- SERVICE (units) ---------- */
 window.openUnit=function(id){

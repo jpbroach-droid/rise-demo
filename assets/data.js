@@ -334,6 +334,7 @@
 
   /* ---------- inspections (Inspection Booker) ---------- */
   var inspections = [
+    { id: 'IN-616', unit: uof('B01', 1).id, building: 'B01', ahj: 'AHJ-RIC', test: 'Cat 1 annual', mechanic: 'M101', proposed: [TODAY + ' 13:00'], confirmed: TODAY + ' 13:00', status: 'Confirmed', sent: addDays(TODAY, -8), reminders: 0, nextReminder: null, approvalForChanges: true },
     { id: 'IN-611', unit: uof('B08',0).id, building: 'B08', ahj: 'AHJ-RIC', test: 'Cat 1 annual', mechanic: 'M101', proposed: [wk(addDays(TODAY, 8)) + ' 09:00', wk(addDays(TODAY, 9)) + ' 13:00', wk(addDays(TODAY, 13)) + ' 09:00'], confirmed: null, status: 'Awaiting AHJ', sent: addDays(TODAY, -3), reminders: 1, nextReminder: addDays(TODAY, 1), approvalForChanges: true },
     { id: 'IN-612', unit: uof('B14',0).id, building: 'B14', ahj: 'AHJ-ARL', test: 'Cat 1 annual', mechanic: 'M105', proposed: [wk(addDays(TODAY, 2)) + ' 08:30'], confirmed: wk(addDays(TODAY, 2)) + ' 08:30', status: 'Confirmed', sent: addDays(TODAY, -6), reminders: 0, nextReminder: null, approvalForChanges: true },
     { id: 'IN-613', unit: uof('B17',0).id, building: 'B17', ahj: 'AHJ-DOM', test: 'Cat 5 five-year', mechanic: 'M109', proposed: [wk(addDays(TODAY, 15)) + ' 07:30'], confirmed: null, status: 'Change requested', counter: wk(addDays(TODAY, 16)) + ' 10:00', sent: addDays(TODAY, -4), reminders: 0, nextReminder: null, approvalForChanges: true },
