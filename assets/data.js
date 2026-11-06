@@ -36,8 +36,8 @@
     { id: 'HR', name: 'Hampton Roads', owner: 'own-b', color: '#6E7F2A', office: 'Norfolk' }
   ];
   var locals = [
-    { id: 'L-DC', name: 'IUEC local — DC / MD / NoVA', baseRate: 64.85, fringe: 38.12, holding: true },
-    { id: 'L-VA', name: 'IUEC local — Richmond / Tidewater', baseRate: 56.40, fringe: 33.70, holding: true }
+    { id: 'L-DC', name: 'IUEC local — DC / MD / NoVA', baseRate: 64.85, fringe: 38.12, hall: 'Alexandria, VA', zoneMiles: 35, zonePay: 5.25, perDiemMiles: 75, perDiem: 85, holding: true },
+    { id: 'L-VA', name: 'IUEC local — Richmond / Tidewater', baseRate: 56.40, fringe: 33.70, hall: 'Richmond, VA (Tidewater sub-zone: Norfolk)', zoneMiles: 35, zonePay: 4.50, perDiemMiles: 75, perDiem: 75, holding: true }
   ];
 
   var mechNames = [
@@ -73,6 +73,9 @@
     { id: 'U7', name: 'Ben Atkins', role: 'Sales — Richmond', scope: ['RIC'] },
     { id: 'U8', name: 'Priya Shah', role: 'Accounting', scope: 'ALL' }
   ];
+
+  // road miles between territory hubs — used for zone pay / per diem when a mechanic works away from home
+  var hubMiles = { RIC: { RIC: 0, NOVA: 105, DCMD: 112, HR: 95 }, NOVA: { RIC: 105, NOVA: 0, DCMD: 14, HR: 190 }, DCMD: { RIC: 112, NOVA: 14, DCMD: 0, HR: 200 }, HR: { RIC: 95, NOVA: 190, DCMD: 200, HR: 0 } };
 
   /* ---------- AHJs ---------- */
   var ahjs = [
@@ -285,6 +288,27 @@
   timeEntries.push({ id: 'T' + (tid++), mechanic: 'M103', date: '2026-11-02', work: 6, travel: 3, ot: 0, job: 'J-26038', territory: 'HR', homeTerritory: 'RIC', kind: 'New installation', source: 'Mechanic app', note: 'Rail alignment assist — Oceanfront Grand' });
   timeEntries.push({ id: 'T' + (tid++), mechanic: 'M112', date: '2026-10-28', work: 4, travel: 2.5, ot: 0, job: null, territory: 'RIC', homeTerritory: 'HR', kind: 'Callback coverage', source: 'Dispatch', note: 'Covered Richmond callbacks during Tasha PTO' });
 
+  // zone pay / per diem on every entry worked away from the mechanic's home zone
+  function zoneFor(te) {
+    var m = mechanics.filter(function (x) { return x.id === te.mechanic; })[0];
+    var loc = locals.filter(function (l) { return l.id === m.local; })[0];
+    var miles = hubMiles[te.homeTerritory][te.territory] + (te.territory === te.homeTerritory ? int(4, 28) : 0);
+    var z = { miles: miles, zonePay: 0, perDiem: 0 };
+    if (miles > loc.zoneMiles) z.zonePay = Math.round((te.work + te.ot) * loc.zonePay * 100) / 100;
+    if (miles > loc.perDiemMiles) z.perDiem = loc.perDiem;
+    return z;
+  }
+  timeEntries.forEach(function (te) { te.zone = zoneFor(te); });
+
+  /* ---------- expenses: receipts, mileage, hauling (mechanic app → office → payroll) ---------- */
+  var expenses = [
+    { id: 'EX-2041', mechanic: 'M101', date: addDays(TODAY, -2), kind: 'Receipt', vendor: 'Home Depot #4615 (Glen Allen)', desc: 'Pit light fixture + bulbs', amount: 86.42, chargeTo: 'J-26041', paidWith: 'Company card', po: 'PO-26-0412', receipt: true, status: 'Matched to PO' },
+    { id: 'EX-2042', mechanic: 'M105', date: addDays(TODAY, -1), kind: 'Receipt', vendor: 'Fastenal — Alexandria', desc: 'Door gib pack, anchors', amount: 47.18, chargeTo: 'OH-SHOP', paidWith: 'Personal card', po: null, receipt: true, status: 'Pending approval' },
+    { id: 'EX-2043', mechanic: 'M114', date: '2026-10-30', kind: 'Mileage', vendor: null, desc: 'Norfolk shop → Capitol Square Tower (Richmond) and back', miles: 188, rate: 0.70, amount: 131.60, chargeTo: 'J-26031', paidWith: 'Reimburse', po: null, receipt: false, status: 'Approved' },
+    { id: 'EX-2044', mechanic: 'M114', date: '2026-10-29', kind: 'Hauling', vendor: null, desc: 'Trailer — rail sections to Capitol Square', amount: 140, chargeTo: 'J-26031', paidWith: 'Reimburse', po: null, receipt: true, status: 'Approved' },
+    { id: 'EX-2045', mechanic: 'M112', date: addDays(TODAY, -3), kind: 'Receipt', vendor: 'Grainger', desc: 'Emergency light batteries (4)', amount: 211.37, chargeTo: 'OH-SHOP', paidWith: 'Company card', po: 'PO-26-0409', receipt: false, status: 'Needs receipt photo' }
+  ];
+
   /* ---------- proposals ---------- */
   var tcTemplates = [
     { id: 'MA-TC v4.2', kind: 'Maintenance agreement', updated: '2026-07-14', clauses: ['Term & auto-renewal', 'Annual price adjustment', 'Exclusions (vandalism, misuse, obsolete parts)', 'Callback hours & overtime', 'Cancellation for convenience', 'Limitation of liability'] },
@@ -418,12 +442,12 @@
   ];
 
   var SEED = {
-    version: 1, today: TODAY, now: NOW_TIME,
+    version: 2, today: TODAY, now: NOW_TIME,
     owners: owners, territories: territories, locals: locals, mechanics: mechanics, office: office, ahjs: ahjs,
     customers: customers, buildings: buildings, units: units, contracts: contracts, visits: visits, calls: calls,
     onCall: onCall, jobs: jobs, timeEntries: timeEntries, tcTemplates: tcTemplates, proposals: proposals, leads: leads,
     fieldLeads: fieldLeads, findings: findings, inspections: inspections, pos: pos, overheadCodes: overheadCodes,
-    parts: parts, invoices: invoices, mcp: mcp, activity: activity,
+    parts: parts, invoices: invoices, mcp: mcp, activity: activity, expenses: expenses, hubMiles: hubMiles,
     requests: [],          // website / portal intake not yet triaged
     offlineQueue: []       // mechanic app unsynced entries
   };
