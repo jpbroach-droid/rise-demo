@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>RiseOS Guided Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+/* Presenter shell: stage (office frame + optional phone frame) above a control bar. Arrow keys / space drive it. */
+html,body{height:100%;overflow:hidden}
+body{background:#E4E6EB;display:flex;flex-direction:column}
+.stage{flex:1;min-height:0;display:flex;gap:16px;padding:14px max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));align-items:stretch}
+.leftwrap{flex:1;min-width:0;position:relative;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 4px 24px rgba(22,24,29,.12)}
+.leftwrap iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;background:#fff}
+.phonewrap{flex:none;display:flex;align-items:center;justify-content:center;transition:width .35s ease,opacity .25s;overflow:hidden}
+.phonewrap.off{width:0!important;opacity:0}
+.bezel{background:#16181D;border-radius:46px;padding:11px;box-shadow:0 18px 50px rgba(0,0,0,.28);transform-origin:center center}
+.bezel iframe{display:block;width:390px;height:844px;border:0;border-radius:36px;background:#fff}
+.dbar{flex:none;background:var(--panel);border-top:1px solid var(--line);padding:12px max(18px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;gap:18px;align-items:center}
+.dbar .count{font-family:var(--mono);font-size:13px;color:var(--ink-3);white-space:nowrap}
+.dbar .count b{color:var(--brand-ink);font-size:20px;font-weight:500}
+.dbar .txt{flex:1;min-width:0}
+.dbar .ttl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-ink);font-weight:600}
+.dbar .cap{font-size:19px;font-weight:500;line-height:1.3;margin-top:2px;text-wrap:balance}
+.dbar .sub{font-size:13.5px;color:var(--ink-2);margin-top:3px}
+.ctrls{display:flex;gap:8px;align-items:center;flex:none}
+.ctrls .btn{padding:9px 14px}
+.next{background:var(--brand);border-color:var(--brand);color:#fff;font-size:16px;padding:11px 22px!important;min-width:132px;justify-content:center}
+.next:hover{background:var(--brand-ink)}
+.next[disabled]{opacity:.6}
+.prog{height:3px;background:var(--line);flex:none}.prog i{display:block;height:100%;background:var(--brand);transition:width .3s}
+.notes{position:absolute;right:max(18px,env(safe-area-inset-right,0px));bottom:100px;width:min(420px,calc(100vw - 36px));background:#16181D;color:#E9EBEF;border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:20}
+.notes h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9AA1AE;margin-bottom:6px}
+.notes ul{margin:0;padding-left:18px}
+.menu{position:absolute;left:max(18px,env(safe-area-inset-left,0px));bottom:100px;width:min(380px,calc(100vw - 36px));max-height:60vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:20;padding:6px}
+.menu button{display:flex;gap:10px;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:6px;font-size:13.5px}
+.menu button:hover{background:var(--bg)}
+.menu button.on{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+.menu button span{font-family:var(--mono);color:var(--ink-3);width:22px;flex:none}
+.keys{font-size:11px;color:var(--ink-3)}
+.hidebar .dbar,.hidebar .prog{display:none}
+.showbar{position:fixed;right:14px;bottom:14px;z-index:30;display:none}
+.hidebar .showbar{display:inline-flex}
+@media(max-width:900px){.dbar{flex-wrap:wrap}.dbar .txt{flex-basis:100%;order:-1}.keys{display:none}}
+</style></head><body>
+<div class="stage">
+  <div class="leftwrap" id="lw"><iframe id="L" title="Rise office"></iframe></div>
+  <div class="phonewrap off" id="pw"><div class="bezel" id="bz"><iframe id="P" title="Mechanic phone"></iframe></div></div>
+</div>
+<div class="prog"><i id="pg"></i></div>
+<div class="dbar">
+  <div class="count"><b id="n">1</b> / <span id="tot"></span></div>
+  <div class="txt"><div class="ttl" id="ttl"></div><div class="cap" id="cap"></div><div class="sub" id="sub"></div></div>
+  <div class="ctrls">
+    <span class="keys">← → or space</span>
+    <button class="btn" onclick="toggleMenu()" title="Jump to a step (M)">Steps</button>
+    <button class="btn" onclick="toggleNotes()" title="Speaker notes (N)">Notes</button>
+    <button class="btn" onclick="back()" title="Back (←)">‹ Back</button>
+    <button class="btn next" id="nx" onclick="next()">Next ›</button>
+  </div>
+</div>
+<div id="notes" class="notes" hidden></div>
+<div id="menu" class="menu" hidden></div>
+<button class="btn showbar" onclick="document.body.classList.remove('hidebar')">Show demo bar</button>
+<script>
+(function(){
+var L=document.getElementById('L'),P=document.getElementById('P'),lw=document.getElementById('lw'),pw=document.getElementById('pw'),bz=document.getElementById('bz');
+var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+var T={callSummary:'Car stopped at 7, doors open, nobody inside',callId:null,pid:null};
+var done={},cur=-1,busy=false;
+
+/* ---------- layout ---------- */
+function fit(){var r=lw.getBoundingClientRect();var VW=Math.max(r.width,1320);var s=r.width/VW;L.style.width=VW+'px';L.style.height=(r.height/s)+'px';L.style.transform='scale('+s+')';
+  var sh=document.querySelector('.stage').getBoundingClientRect().height-24;var ps=Math.min(1,sh/866);bz.style.transform='scale('+ps+')';pw.style.width=pw.classList.contains('off')?'0':(412*ps+8)+'px'}
+window.addEventListener('resize',fit);
+/* scrollIntoView inside a frame also scrolls this shell; pin it in place */
+function pin(el){el.addEventListener('scroll',function(){if(el.scrollTop||el.scrollLeft){el.scrollTop=0;el.scrollLeft=0}})}
+[lw,pw,bz,document.querySelector('.stage')].forEach(pin);window.addEventListener('scroll',function(){if(window.scrollY||window.scrollX)window.scrollTo(0,0)});
+function phone(on){pw.classList.toggle('off',!on);fit();setTimeout(fit,380)}
+
+/* ---------- frame helpers ---------- */
+var CSS='.testmode{display:none!important}.tour-hl{outline:3px solid #DF0B48!important;outline-offset:3px;box-shadow:0 0 0 9px rgba(223,11,72,.16)!important;border-radius:6px;transition:outline-color .2s}.tour-press{transform:scale(.96);transition:transform .12s}';
+function prep(f){try{var d=f.contentDocument;if(!d.getElementById('tour-css')){var st=d.createElement('style');st.id='tour-css';st.textContent=CSS;d.head.appendChild(st)}d.addEventListener('keydown',keys)}catch(e){}}
+L.addEventListener('load',function(){prep(L)});P.addEventListener('load',function(){prep(P)});
+function load(f,url){return new Promise(function(res){var w;try{w=f.contentWindow.location}catch(e){}var base=url.split('#')[0],hash=url.indexOf('#')>-1?url.split('#')[1]:'';
+  if(w&&w.href&&w.href.indexOf('about:')!==0&&(w.pathname.split('/').pop()+w.search)===base){if(hash&&w.hash!=='#'+hash){w.hash=hash;setTimeout(res,350)}else setTimeout(res,150);return}
+  var on=function(){f.removeEventListener('load',on);prep(f);setTimeout(res,450)};f.addEventListener('load',on);f.src=url})}
+function W(f){return f.contentWindow}function D(f){return f.contentDocument}
+function q(f,sel,text){var els=D(f).querySelectorAll(sel);for(var i=0;i<els.length;i++){if(!text||els[i].textContent.indexOf(text)>-1)return els[i]}return null}
+function clearHL(){[L,P].forEach(function(f){try{var a=D(f).activeElement;if(a&&a!==D(f).body)a.blur();}catch(e){}try{D(f).querySelectorAll('.tour-hl').forEach(function(e){e.classList.remove('tour-hl')})}catch(e){}})}
+async function hl(el,keep){if(!el)return;el.scrollIntoView({block:'center',behavior:'smooth'});await sleep(450);el.classList.add('tour-hl');if(!keep){}}
+async function press(el,wait){if(!el)return;await hl(el);await sleep(500);el.classList.add('tour-press');await sleep(130);el.classList.remove('tour-press');el.click();try{el.blur()}catch(e){}el.classList.remove('tour-hl');await sleep(wait==null?700:wait)}
+async function typeIn(el,text){if(!el)return;await hl(el);el.focus();el.value='';for(var i=0;i<text.length;i++){el.value+=text[i];el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(28)}el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();el.classList.remove('tour-hl');await sleep(250)}
+async function setSel(el,val){if(!el)return;await hl(el);await sleep(300);el.value=val;el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();await sleep(500);el.classList.remove('tour-hl')}
+function R(){return W(L).RISE}
+
+/* ---------- steps ---------- */
+var S=[
+ {t:'Welcome',c:'RiseOS: one system for sales, dispatch, the field and the money',s:'Six screens, one set of data. What happens on one shows up on the others.',left:'index.html',phone:false,
+  n:['Built for Rise, priced without revenue percentages','Everything you see is the live demo, not slides','We\'ll follow one service call from the website to the invoice, then the money side']},
+ {t:'Website',c:'Rise\'s new website: every form feeds the system directly',s:'Request service and Get a quote land in dispatch and the sales pipeline. No retyping.',left:'website.html',phone:false,
+  n:['Same tagline, phone and reviews as today\'s site','Built to rank locally: Richmond, NoVA, DC, Hampton Roads']},
+ {t:'Website → request',c:'A building manager reports a car out of service',s:'Out of service at Capitol Square Tower.',left:'website.html#service',phone:false,
+  run:async function(){var w=W(L);var us=w.RISE.db.units.filter(function(x){return x.building==='B04'});var u=us.find(function(x,i){return i>1&&(w.RISE.coverFor(x.id,false)||{}).mech==='M101'})||us[2];
+   await press(q(L,'.urgent label','Out of service'),300);await setSel(D(L).getElementById('w-unit'),u.id);await typeIn(D(L).getElementById('w-sum'),T.callSummary);await hl(q(L,'#svc-form button','Send to dispatch'))},
+  n:['Could also be a text, an email, the portal or a call to the office: same intake']},
+ {t:'Website → request',c:'Sent. It\'s routed to Ron, the route mechanic for that building',s:'He gets a text; the manager gets his ETA back. On PTO? Coverage. After hours? On-call.',left:'website.html#service',phone:false,
+  run:async function(){var b=q(L,'#svc-form button','Send to dispatch');if(b)await press(b,900);T.callId=R().db.calls[0].id;await hl(q(L,'.ok-box'))},
+  n:['Routing rules: route mechanic → PTO coverage → on-call after hours','Entrapments get their own clock and escalation']},
+ {t:'Dispatch + the field',c:'Dispatch sees it instantly, waiting on Ron to acknowledge',s:'Left: the office. Right: Ron\'s phone. No ack in 5 minutes and dispatch is alerted.',left:'backoffice.html#dispatch',phone:true,pUrl:'mechanic.html',
+  run:async function(){await sleep(300);await hl(q(L,'.call',T.callSummary),true);await hl(q(P,'.jobcard',T.callSummary),true)},
+  n:['Every call carries unit history, contract coverage and whether it\'s billable']},
+ {t:'Dispatch + the field',c:'Ron taps once: acknowledged, ETA sent to the office and the customer',s:'Watch the card move on the left.',left:'backoffice.html#dispatch',phone:true,pUrl:'mechanic.html',
+  run:async function(){var card=q(P,'.jobcard',T.callSummary);if(!card){R().createRequest({unit:R().db.units.filter(function(x){return x.building==='B04'})[2].id,name:'Front desk',source:'Phone',summary:T.callSummary,priority:'down'});await sleep(600);card=q(P,'.jobcard',T.callSummary)}
+   var btn=card&&Array.prototype.slice.call(card.querySelectorAll('button')).find(function(b){return b.textContent.indexOf('Got it')>-1});await press(btn,1100);await hl(q(L,'.call',T.callSummary),true)},
+  n:['Works offline: the app queues entries and syncs when he has signal']},
+ {t:'Customer portal',c:'The building manager sees Ron is on the way, with his ETA',s:'Their units, history, test dates, reports, proposals and invoices, by building or portfolio.',left:'portal.html?c=C02',phone:false,
+  run:async function(){await hl(q(L,'.unitrow','en route'),true)},
+  n:['Portfolio owners see every building; a single HOA sees one','Proposals signed and invoices paid right here (card or ACH via Stax)']},
+ {t:'On site',c:'Every task opens to the steps and the code reference',s:'Here: the monthly Phase I/II fire service test.',left:'backoffice.html#compliance',phone:true,pUrl:'mechanic.html',
+  run:async function(){var b=q(L,'#v-compliance .tabs button','FixFlow');if(b)W(L).ctab(b,2);var w=W(P);var v=w.RISE.db.visits.filter(function(x){return x.mechanic==='M101'&&x.building==='B01'})[0];w.openJob(v.id,'pm');await sleep(600);await press(D(P).querySelectorAll('.task .more')[5],900);await hl(q(P,'#tsheet ol'))},
+  n:['Steps are Rise\'s to edit: the MCP becomes their checklist']},
+ {t:'On site',c:'A failed test becomes a repair request with one tap',s:'It lands in FixFlow on the left with a 30-day correction deadline.',left:'backoffice.html#compliance',phone:true,pUrl:'mechanic.html',
+  run:async function(){await press(D(P).getElementById('fs-fail'),500);var s=D(P).getElementById('fs-what');if(s)await setSel(s,s.options[2].value);await press(q(P,'#tsheet button','Send repair request'),1200);await hl(q(L,'#v-compliance .ctab:not([hidden]) tr:nth-child(2)'),true)},
+  n:['FixFlow: citations, test deficiencies and mechanic findings → priced quote → re-inspection']},
+ {t:'The mechanic\'s schedule',c:'Ron\'s week and month, synced to his phone calendar',s:'Dispatch sees the same thing for every mechanic, with hours loaded against capacity.',left:'backoffice.html#dispatch',phone:true,pUrl:'mechanic.html',
+  run:async function(){var w=W(P);try{w.closeSheet()}catch(e){}w.tab('month');await sleep(500);await hl(q(L,'.mcal'),true);await sleep(1600);w.schMode('month');await sleep(400);await hl(q(P,'.mg'),true)},
+  n:['Month view pages ahead so the office can see December and January load']},
+ {t:'AHJ testing',c:'At a Cat 1 test, Ron photographs the inspector\'s report and logs what they noted',s:'Pass, pass with deficiencies, or fail.',left:'backoffice.html#compliance',phone:true,pUrl:'mechanic.html',
+  run:async function(){var b=q(L,'#v-compliance .tabs button','FixFlow');if(b)W(L).ctab(b,2);var w=W(P);w.tab('today');w.testCloseout('IN-616');await sleep(500);w.upDone({files:[1,2]});await hl(D(P).getElementById('up'));await sleep(600);w.tcRes('def');await sleep(300);var inp=q(P,'#defrows input');await typeIn(inp,'Pit light inoperative');w.defs[0].item='Pit light inoperative';await hl(q(P,'.sheet button','Submit test record'))},
+  n:['Inspection Booker already scheduled this with the City of Richmond and chased the confirmation']},
+ {t:'AHJ testing',c:'Filed: report on the unit, next test date set, deficiency sent to the office',s:'It shows up in FixFlow on the left, ready to quote.',left:'backoffice.html#compliance',phone:true,pUrl:'mechanic.html',
+  run:async function(){var b=q(P,'.sheet button','Submit test record');if(b)await press(b,1200);await hl(q(L,'#v-compliance .ctab:not([hidden]) tr:nth-child(2)'),true)}},
+ {t:'Expenses',c:'Bought a part without a PO? Photo the receipt and pick the job',s:'Company card or his own money; reimbursements ride the next ADP payroll.',left:'backoffice.html#finance',phone:true,pUrl:'mechanic.html',
+  run:async function(){var b=q(L,'#v-finance .tabs button','Expenses');if(b)W(L).ctab(b,2);var w=W(P);try{w.closeSheet()}catch(e){}w.tv='exp';w.tab('time');await sleep(400);await press(q(P,'button','Add receipt'),700);await typeIn(D(P).getElementById('ex-amt'),'63.20');await typeIn(D(P).getElementById('ex-desc'),'Door gibs');await press(D(P).getElementById('pw-pers'),400);await hl(q(P,'.sheet button','Submit'))},
+  n:['Mileage and hauling too','Zone pay and per diem are added automatically from the job address']},
+ {t:'Expenses',c:'In the office queue: approve it and the cost posts to the job',s:'No PO? Assign one after the fact. Missing receipts are flagged.',left:'backoffice.html#finance',phone:true,pUrl:'mechanic.html',
+  run:async function(){var b=q(P,'.sheet button','Submit');if(b)await press(b,1100);await hl(q(L,'#v-finance .ctab:not([hidden]) tr:nth-child(2)'),true)}},
+ {t:'Sales',c:'Building an estimate: loaded labor rates and real part costs',s:'Cost becomes the job budget. Price is what the customer sees. Margin updates live.',left:'backoffice.html#sales',phone:false,
+  run:async function(){await press(q(L,'button','New estimate'),900);await hl(q(L,'.modal .grid.g4'),true)},
+  n:['Terms and conditions are versioned per type; each proposal pins the version it was signed under']},
+ {t:'Sales',c:'Ops approves the estimate before it can go out',s:'Then it goes by email and text, with opens, forwards and time on page tracked.',left:'backoffice.html#sales',phone:false,
+  run:async function(){var b=q(L,'.modal button','Submit for ops approval');if(!b){await press(q(L,'button','New estimate'),800);b=q(L,'.modal button','Submit for ops approval')}await press(b,900);await press(q(L,'.modal button','Approve estimate'),800);await press(q(L,'.modal button','Send by email'),900);T.pid=R().db.proposals[0].id;await hl(q(L,'.modal .tracklist'),true)}},
+ {t:'Customer signs',c:'The customer reviews, signs and gives billing info from their phone',s:'Card or ACH captured through Stax.',left:function(){return 'proposal.html?id='+(T.pid||'P-7709')},phone:false,
+  run:async function(){var cv=D(L).getElementById('cv');if(!cv)return;cv.scrollIntoView({block:'center',behavior:'smooth'});await sleep(700);var r=cv.getBoundingClientRect();var w=W(L);var ev=function(t,x,y,tgt){(tgt||cv).dispatchEvent(new w.PointerEvent(t,{clientX:r.left+x,clientY:r.top+y,bubbles:true}))};
+   ev('pointerdown',40,70);var pts=[[80,40],[110,80],[140,35],[175,75],[205,45],[240,70],[290,50],[330,62]];for(var i=0;i<pts.length;i++){ev('pointermove',pts[i][0],pts[i][1]);await sleep(60)}ev('pointerup',330,62,w);await sleep(300);
+   var a=D(L).getElementById('s-agree');await hl(a.parentNode);a.checked=true;await sleep(400);a.parentNode.classList.remove('tour-hl');await hl(q(L,'.sticky .btn.primary'))}},
+ {t:'Customer signs',c:'Signed. The job is created automatically',s:'Pipeline card moves to Won; deposit invoiced per terms.',left:function(){return 'proposal.html?id='+(T.pid||'P-7709')},phone:false,
+  run:async function(){var b=q(L,'.sticky .btn.primary');if(b)await press(b,900);await hl(q(L,'.done'),true)}},
+ {t:'Jobs',c:'The job carries the estimate as its budget',s:'Labor from clock-ins, material from receipts and POs, tracked against what was quoted.',left:'backoffice.html#projects',phone:false,
+  run:async function(){var j=R().db.jobs.filter(function(x){return x.proposal===T.pid})[0]||R().db.jobs[R().db.jobs.length-1];W(L).openJob(j.id);await sleep(500);await hl(q(L,'.modal h3','Performance to estimate'),true)}},
+ {t:'Jobs',c:'Progress billing: % complete becomes a G702/G703 pay application',s:'Retainage, change orders and lien waivers included.',left:'backoffice.html#projects',phone:false,
+  run:async function(){try{W(L).closeModal()}catch(e){}W(L).openJob('J-26031');await sleep(500);await hl(q(L,'.modal h3','Draw Builder'),true)}},
+ {t:'Crossover Ledger',c:'When one owner\'s mechanic works another owner\'s territory',s:'Actual loaded cost, settled owner to owner monthly, with zone pay and per diem applied.',left:'backoffice.html#crossover',phone:false,
+  run:async function(){try{W(L).closeModal()}catch(e){}await sleep(200);await hl(q(L,'#v-crossover .grid'),true)},
+  n:['This is the one James asked about: make it easy and clear','Same hours post to the job; nothing keyed twice']},
+ {t:'Utilization',c:'Mechanic utilization and route profitability',s:'Maintenance vs. callback hours, and each route\'s revenue against its cost.',left:'backoffice.html#utilization',phone:false,
+  run:async function(){await hl(q(L,'#v-utilization .grid'),true)},
+  n:['Tells you where to sell more units and which routes callbacks are eating']},
+ {t:'The owners\' view',c:'Every morning: what needs a human, ranked by cost of waiting',s:'Entrapment Clock, Callback Watch, Certificate Watch, Renewal Radar.',left:'backoffice.html#today',phone:false,
+  run:async function(){await hl(q(L,'#v-today .card','Needs a human'),true)}},
+ {t:'Scoped access',c:'Marcus signs in and sees Hampton Roads only',s:'Reports and screens are scoped by person and territory.',left:'backoffice.html#reports',phone:false,
+  run:async function(){var s=D(L).getElementById('me-sel');await hl(s);await sleep(300);s.value='U2';s.onchange&&s.onchange.call(s);await sleep(600);await hl(q(L,'#v-reports .card.tbl'),true)}},
+ {t:'Questions',c:'That\'s RiseOS. What would you want to see next?',s:'Everything stays clickable: explore freely, or press Steps to jump back to any part.',left:'index.html',phone:false,
+  run:async function(){try{var s=D(L).getElementById('me-sel')}catch(e){}},
+  n:['Ask for: union agreements, a Service Magic export, QBO class setup, top AHJs','Next step: pilot on dispatch + mechanic app + portal with their real units']}
+];
+
+/* ---------- engine ---------- */
+document.getElementById('tot').textContent=S.length;
+function paint(i){var st=S[i];document.getElementById('n').textContent=i+1;document.getElementById('ttl').textContent=st.t;document.getElementById('cap').textContent=st.c;document.getElementById('sub').textContent=st.s||'';document.getElementById('pg').style.width=((i+1)/S.length*100)+'%';
+  var nt=document.getElementById('notes');nt.innerHTML='<h4>Speaker notes · step '+(i+1)+'</h4>'+(st.n?'<ul>'+st.n.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>':'<div style="color:#9AA1AE">Nothing extra here. Let it breathe.</div>');
+  document.getElementById('nx').textContent=i===S.length-1?'Done':'Next ›';drawMenu();try{history.replaceState(null,'','#step-'+(i+1))}catch(e){}}
+async function show(i,run){if(busy)return;busy=true;var nx=document.getElementById('nx');nx.disabled=true;clearHL();cur=i;paint(i);var st=S[i];
+  try{phone(!!st.phone);var url=typeof st.left==='function'?st.left():st.left;var jobs=[load(L,url)];if(st.phone&&st.pUrl&&(!P.src||P.src.indexOf(st.pUrl)<0))jobs.push(load(P,st.pUrl));await Promise.all(jobs);
+    if(run&&st.run&&!done[i]){done[i]=true;await st.run()}}catch(e){console.error(e)}
+  busy=false;nx.disabled=false}
+window.next=function(){if(cur<S.length-1)show(cur+1,true)};
+window.back=function(){if(cur>0)show(cur-1,false)};
+window.go=function(i){document.getElementById('menu').hidden=true;show(i,true)};
+window.toggleNotes=function(){var n=document.getElementById('notes');n.hidden=!n.hidden};
+window.toggleMenu=function(){var m=document.getElementById('menu');m.hidden=!m.hidden};
+function drawMenu(){document.getElementById('menu').innerHTML=S.map(function(st,i){return '<button class="'+(i===cur?'on':'')+'" onclick="go('+i+')"><span>'+(i+1)+'</span>'+st.t+' — '+st.c+'</button>'}).join('')+'<div style="border-top:1px solid var(--line);margin:6px 0;padding-top:6px"><button onclick="resetDemo()"><span>↺</span>Reset demo data and start over</button><button onclick="document.body.classList.add(\'hidebar\');toggleMenu()"><span>▢</span>Hide the demo bar (free explore)</button></div>'}
+window.resetDemo=async function(){document.getElementById('menu').hidden=true;try{R().reset()}catch(e){}done={};T.callId=null;T.pid=null;P.src='';L.src='';cur=-1;await sleep(100);show(0,true)};
+function keys(e){var tag=(e.target&&e.target.tagName)||'';if(/INPUT|TEXTAREA|SELECT/.test(tag))return;if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();back()}else if(e.key==='n'||e.key==='N')toggleNotes();else if(e.key==='m'||e.key==='M')toggleMenu();else if(e.key==='h'||e.key==='H')document.body.classList.toggle('hidebar')}
+document.addEventListener('keydown',keys);
+fit();
+var start=(location.hash.match(/step-(\d+)/)||[])[1];
+if(start&&+start>1){(async function(){await show(0,false);for(var i=1;i<+start;i++){await show(i,true)}})()}else show(0,true);
+})();
+</script></body></html>
