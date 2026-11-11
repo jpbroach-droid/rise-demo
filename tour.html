@@ -37,6 +37,9 @@ body{background:#E4E6EB;display:flex;flex-direction:column}
 .menu button span{font-family:var(--mono);color:var(--ink-3);width:22px;flex:none}
 .keys{font-size:11px;color:var(--ink-3)}
 .hidebar .dbar,.hidebar .prog{display:none}
+.narrow.phonemode .leftwrap{display:none}.narrow.phonemode .phonewrap{flex:1;width:auto!important}
+button{touch-action:manipulation}
+.narrow .dbar{gap:8px;padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}.narrow .dbar .cap{font-size:15px}.narrow .dbar .sub{display:none}.narrow .ctrls .btn{padding:7px 10px}.narrow .next{min-width:96px;padding:9px 14px!important}
 .showbar{position:fixed;right:14px;bottom:14px;z-index:30;display:none}
 .hidebar .showbar{display:inline-flex}
 @media(max-width:900px){.dbar{flex-wrap:wrap}.dbar .txt{flex-basis:100%;order:-1}.keys{display:none}}
@@ -65,24 +68,26 @@ body{background:#E4E6EB;display:flex;flex-direction:column}
 var L=document.getElementById('L'),P=document.getElementById('P'),lw=document.getElementById('lw'),pw=document.getElementById('pw'),bz=document.getElementById('bz');
 var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 var T={callSummary:'Car stopped at 7, doors open, nobody inside',callId:null,pid:null};
-var done={},cur=-1,busy=false;
+var done={},cur=-1,busy=false,queued=0;
+function saveState(){try{sessionStorage.setItem('rise-tour',JSON.stringify({cur:cur,done:done,T:T}))}catch(e){}}
 
 /* ---------- layout ---------- */
-function fit(){var r=lw.getBoundingClientRect();var VW=Math.max(r.width,1320);var s=r.width/VW;L.style.width=VW+'px';L.style.height=(r.height/s)+'px';L.style.transform='scale('+s+')';
+function fit(){document.body.classList.toggle('narrow',window.innerWidth<760);var r=lw.getBoundingClientRect();var VW=Math.max(r.width,1320);var s=r.width/VW;L.style.width=VW+'px';L.style.height=(r.height/s)+'px';L.style.transform='scale('+s+')';
   var sh=document.querySelector('.stage').getBoundingClientRect().height-24;var ps=Math.min(1,sh/866);bz.style.transform='scale('+ps+')';pw.style.width=pw.classList.contains('off')?'0':(412*ps+8)+'px'}
 window.addEventListener('resize',fit);
 /* scrollIntoView inside a frame also scrolls this shell; pin it in place */
 function pin(el){el.addEventListener('scroll',function(){if(el.scrollTop||el.scrollLeft){el.scrollTop=0;el.scrollLeft=0}})}
 [lw,pw,bz,document.querySelector('.stage')].forEach(pin);window.addEventListener('scroll',function(){if(window.scrollY||window.scrollX)window.scrollTo(0,0)});
-function phone(on){pw.classList.toggle('off',!on);fit();setTimeout(fit,380)}
+function phone(on){pw.classList.toggle('off',!on);document.body.classList.toggle('phonemode',!!on);fit();setTimeout(fit,380)}
 
 /* ---------- frame helpers ---------- */
-var CSS='.testmode{display:none!important}.tour-hl{outline:3px solid #DF0B48!important;outline-offset:3px;box-shadow:0 0 0 9px rgba(223,11,72,.16)!important;border-radius:6px;transition:outline-color .2s}.tour-press{transform:scale(.96);transition:transform .12s}';
+var CSS='.testmode{display:none!important}a[href="index.html"]{display:none!important}.tour-hl{outline:3px solid #DF0B48!important;outline-offset:3px;box-shadow:0 0 0 9px rgba(223,11,72,.16)!important;border-radius:6px;transition:outline-color .2s}.tour-press{transform:scale(.96);transition:transform .12s}';
 function prep(f){try{var d=f.contentDocument;if(!d.getElementById('tour-css')){var st=d.createElement('style');st.id='tour-css';st.textContent=CSS;d.head.appendChild(st)}d.addEventListener('keydown',keys)}catch(e){}}
 L.addEventListener('load',function(){prep(L)});P.addEventListener('load',function(){prep(P)});
 function load(f,url){return new Promise(function(res){var w;try{w=f.contentWindow.location}catch(e){}var base=url.split('#')[0],hash=url.indexOf('#')>-1?url.split('#')[1]:'';
-  if(w&&w.href&&w.href.indexOf('about:')!==0&&(w.pathname.split('/').pop()+w.search)===base){if(hash&&w.hash!=='#'+hash){w.hash=hash;setTimeout(res,350)}else setTimeout(res,150);return}
-  var on=function(){f.removeEventListener('load',on);prep(f);setTimeout(res,450)};f.addEventListener('load',on);f.src=url})}
+  if(w&&w.href&&w.href.indexOf('about:')!==0&&(w.pathname.split('/').pop()+w.search)===base){if(hash&&w.hash!=='#'+hash){w.replace(w.href.split('#')[0]+'#'+hash);setTimeout(res,350)}else setTimeout(res,150);return}
+  var fin=false;var on=function(){if(fin)return;fin=true;f.removeEventListener('load',on);prep(f);setTimeout(res,450)};f.addEventListener('load',on);setTimeout(on,8000);
+  var abs=new URL(url,location.href).href;try{if(w&&w.href&&w.href.indexOf('about:')!==0){f.contentWindow.location.replace(abs);return}}catch(e){}f.src=abs})}
 function W(f){return f.contentWindow}function D(f){return f.contentDocument}
 function q(f,sel,text){var els=D(f).querySelectorAll(sel);for(var i=0;i<els.length;i++){if(!text||els[i].textContent.indexOf(text)>-1)return els[i]}return null}
 function clearHL(){[L,P].forEach(function(f){try{var a=D(f).activeElement;if(a&&a!==D(f).body)a.blur();}catch(e){}try{D(f).querySelectorAll('.tour-hl').forEach(function(e){e.classList.remove('tour-hl')})}catch(e){}})}
@@ -134,6 +139,11 @@ var S=[
   n:['Mileage and hauling too','Zone pay and per diem are added automatically from the job address']},
  {t:'Expenses',c:'In the office queue: approve it and the cost posts to the job',s:'No PO? Assign one after the fact. Missing receipts are flagged.',left:'backoffice.html#finance',phone:true,pUrl:'mechanic.html',
   run:async function(){var b=q(P,'.sheet button','Submit');if(b)await press(b,1100);await hl(q(L,'#v-finance .ctab:not([hidden]) tr:nth-child(2)'),true)}},
+ {t:'Maintenance billing',c:'A school district wants proof of every visit: the invoice ships with each unit\'s MCP record',s:'Set per customer: MCP attached, their PO on the invoice, one line per unit, sent to their vendor portal.',left:'backoffice.html#finance',phone:false,
+  run:async function(){var b=q(L,'#v-finance .tabs button','A/R');if(b)W(L).ctab(b,0);await sleep(300);await hl(q(L,'#v-finance .card','Invoice packages'),true);await sleep(1400);var iv=R().db.invoices.filter(function(x){return x.customer==='C15'&&x.period==='2026-10'&&x.package&&x.status!=='Paid'})[0]||R().db.invoices.filter(function(x){return x.customer==='C15'&&x.package})[0];W(L).openPackage(iv.id);await sleep(500);await hl(q(L,'.modal .stack'),true)},
+  n:['Government and school contracts often won\'t pay without visit proof','Records come straight from Ron\'s close-outs: tasks, time on site, location verified, e-signed','November\'s invoice is holding until every visit is logged; it sends itself the day the last one closes']},
+ {t:'Maintenance billing',c:'One click sends the invoice and all six records together',s:'Emailed to AP, uploaded to eVA, synced to QuickBooks. The customer sees it in their portal too.',left:'backoffice.html#finance',phone:false,
+  run:async function(){var b=q(L,'.modal button','Send package');if(b)await press(b,900);await hl(q(L,'.modal .pill'),true)}},
  {t:'Sales',c:'Building an estimate: loaded labor rates and real part costs',s:'Cost becomes the job budget. Price is what the customer sees. Margin updates live.',left:'backoffice.html#sales',phone:false,
   run:async function(){await press(q(L,'button','New estimate'),900);await hl(q(L,'.modal .grid.g4'),true)},
   n:['Terms and conditions are versioned per type; each proposal pins the version it was signed under']},
@@ -171,19 +181,22 @@ function paint(i){var st=S[i];document.getElementById('n').textContent=i+1;docum
   document.getElementById('nx').textContent=i===S.length-1?'Done':'Next ›';drawMenu();try{history.replaceState(null,'','#step-'+(i+1))}catch(e){}}
 async function show(i,run){if(busy)return;busy=true;var nx=document.getElementById('nx');nx.disabled=true;clearHL();cur=i;paint(i);var st=S[i];
   try{phone(!!st.phone);var url=typeof st.left==='function'?st.left():st.left;var jobs=[load(L,url)];if(st.phone&&st.pUrl&&(!P.src||P.src.indexOf(st.pUrl)<0))jobs.push(load(P,st.pUrl));await Promise.all(jobs);
-    if(run&&st.run&&!done[i]){done[i]=true;await st.run()}}catch(e){console.error(e)}
-  busy=false;nx.disabled=false}
-window.next=function(){if(cur<S.length-1)show(cur+1,true)};
-window.back=function(){if(cur>0)show(cur-1,false)};
+    if(run&&st.run&&!done[i]){done[i]=true;saveState();await st.run()}}catch(e){console.error(e)}
+  saveState();busy=false;nx.disabled=false;if(queued){var qd=queued;queued=0;if(qd>0)next();else back()}}
+var lastTap=0;function bounce(){var t=Date.now();if(t-lastTap<450)return true;lastTap=t;return false}
+window.next=function(){if(bounce())return;if(busy){queued=1;return}if(cur<S.length-1)show(cur+1,true)};
+window.back=function(){if(bounce())return;if(busy){queued=-1;return}if(cur>0)show(cur-1,false)};
 window.go=function(i){document.getElementById('menu').hidden=true;show(i,true)};
 window.toggleNotes=function(){var n=document.getElementById('notes');n.hidden=!n.hidden};
 window.toggleMenu=function(){var m=document.getElementById('menu');m.hidden=!m.hidden};
 function drawMenu(){document.getElementById('menu').innerHTML=S.map(function(st,i){return '<button class="'+(i===cur?'on':'')+'" onclick="go('+i+')"><span>'+(i+1)+'</span>'+st.t+' — '+st.c+'</button>'}).join('')+'<div style="border-top:1px solid var(--line);margin:6px 0;padding-top:6px"><button onclick="resetDemo()"><span>↺</span>Reset demo data and start over</button><button onclick="document.body.classList.add(\'hidebar\');toggleMenu()"><span>▢</span>Hide the demo bar (free explore)</button></div>'}
-window.resetDemo=async function(){document.getElementById('menu').hidden=true;try{R().reset()}catch(e){}done={};T.callId=null;T.pid=null;P.src='';L.src='';cur=-1;await sleep(100);show(0,true)};
+window.resetDemo=async function(){document.getElementById('menu').hidden=true;try{R().reset()}catch(e){}done={};T.callId=null;T.pid=null;try{sessionStorage.removeItem('rise-tour')}catch(e){}P.src='about:blank';L.src='about:blank';cur=-1;await sleep(100);show(0,true)};
 function keys(e){var tag=(e.target&&e.target.tagName)||'';if(/INPUT|TEXTAREA|SELECT/.test(tag))return;if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();back()}else if(e.key==='n'||e.key==='N')toggleNotes();else if(e.key==='m'||e.key==='M')toggleMenu();else if(e.key==='h'||e.key==='H')document.body.classList.toggle('hidebar')}
 document.addEventListener('keydown',keys);
 fit();
+var saved=null;try{saved=JSON.parse(sessionStorage.getItem('rise-tour')||'null')}catch(e){}
 var start=(location.hash.match(/step-(\d+)/)||[])[1];
-if(start&&+start>1){(async function(){await show(0,false);for(var i=1;i<+start;i++){await show(i,true)}})()}else show(0,true);
+if(saved&&saved.cur>=0&&saved.cur<S.length){done=saved.done||{};if(saved.T)T=saved.T;show(saved.cur,false)}
+else if(start&&+start>1){(async function(){await show(0,false);for(var i=1;i<+start;i++){await show(i,true)}})()}else show(0,true);
 })();
 </script></body></html>

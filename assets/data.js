@@ -178,9 +178,23 @@
   U_CB1.callbacks90 = 4; U_CB2.callbacks90 = 3; U_CB3.callbacks90 = 3;
   uof('B08', 0).certExpires = addDays(TODAY, 9); uof('B14', 0).certExpires = addDays(TODAY, 4); uof('B21', 2).certExpires = addDays(TODAY, -3);
 
+  /* ---------- government customer with an invoice package requirement (deterministic, no rnd) ---------- */
+  customers.push({ id: 'C15', name: 'Capital Region Public Schools', territory: 'RIC', kind: 'Portfolio', contact: 'Denise Carter, Facilities Contracts', email: 'facilities.ap@crps.example.k12.va.us', terms: 'Net 45', payMethod: 'ach', creditHold: false, holdOverride: false, balance: 0, portalUsers: ['Denise Carter'],
+    gov: true, billingRules: { mcp: true, po: 'PO 4500-2026-0417', perUnitLines: true, holdUntilComplete: true, delivery: 'Email to AP + upload to eVA vendor portal', contractRef: 'IFB #26-118 Elevator Maintenance' } });
+  [['B26', 'Westbrook Middle School', '4100 Westbrook Rd', 'Henrico, VA'], ['B27', 'Meadowview Elementary', '9200 Meadowview Ln', 'Chesterfield, VA'], ['B28', 'Laurel Ridge High School', '1500 Laurel Ridge Pkwy', 'Henrico, VA']].forEach(function (b, bi) {
+    buildings.push({ id: b[0], customer: 'C15', name: b[1], address: b[2], city: b[3], ahj: 'AHJ-RIC', territory: 'RIC', unitCount: 2 });
+    for (var k = 0; k < 2; k++) {
+      var hydS = !(bi === 2 && k === 0);
+      units.push({ id: 'U-' + (1000 + uid++), building: b[0], customer: 'C15', territory: 'RIC', ahj: 'AHJ-RIC', name: 'Car ' + (k + 1), stateId: 'VA-' + (47210 + bi * 10 + k),
+        make: hydS ? (k ? 'Dover' : 'TKE') : 'Otis', type: hydS ? 'Hydraulic — in-ground' : 'Traction — MRL', model: hydS ? (k ? 'Oildraulic (legacy)' : 'Endura') : 'Gen2 MRL', year: hydS ? 1994 + bi * 4 + k : 2016,
+        stops: hydS ? 2 + (bi === 2 ? 1 : 0) : 4, capacity: hydS ? 3500 : 4000, speed: hydS ? 125 : 350, cat1Due: addDays(TODAY, 40 + bi * 30 + k * 7), cat5Due: hydS ? null : '2027-03-15', cat3Due: hydS ? '2027-0' + (3 + bi) + '-10' : null,
+        certExpires: addDays(TODAY, 70 + bi * 30), mcpOnSite: true, hoursPerVisit: hydS ? 1 : 1.25, visitsPerMonth: 1, status: 'running', obsolete: hydS && k ? ['Hydraulic valve'] : [], callbacks90: bi === 1 && k ? 2 : 0 });
+    }
+  });
+
   /* ---------- contracts ---------- */
   var cTypes = ['Full Service', 'Full Service', 'Oil & Grease (lube only)', 'Parts, Oil & Grease', 'Full Service'];
-  var contracts = customers.map(function (c, i) {
+  var contracts = customers.filter(function (c) { return !c.gov; }).map(function (c, i) {
     var cu = units.filter(function (u) { return u.customer === c.id; });
     var type = cTypes[i % cTypes.length];
     var perUnit = type === 'Full Service' ? int(430, 620) : type.indexOf('Parts') === 0 ? int(300, 400) : int(190, 260);
@@ -201,6 +215,7 @@
   contracts[3].end = addDays(TODAY, 41); contracts[3].autoRenew = false;
   contracts[7].end = addDays(TODAY, 67);
   contracts[12].end = addDays(TODAY, 24); contracts[12].autoRenew = false;
+  contracts.push({ id: 'MA-2414', customer: 'C15', territory: 'RIC', type: 'Full Service', units: units.filter(function (x) { return x.customer === 'C15'; }).map(function (x) { return x.id; }), monthly: 395 * 6, perUnit: 395, billing: 'Monthly', start: '2025-07-01', end: '2028-06-30', termMonths: 36, autoRenew: false, cancelClause: 'Non-appropriation (public funds)', escalation: { pct: 3, every: 'Annual', next: '2027-07-01', indexed: 'Fixed' }, tcVersion: 'MA-TC v4.2 + IFB #26-118 terms', cost90: 0, revenue90: 0 });
   contracts[10].cancelClause = '30-day for convenience';
 
   /* ---------- PM visits this month (auto-generated from routes) ---------- */
@@ -407,10 +422,15 @@
     if (!j.billedPct) return;
     invoices.push({ id: 'INV-' + (invNo++), customer: j.customer, territory: j.territory, ref: j.id, kind: j.type === 'Repair' ? 'Repair — progress' : 'Progress billing (G702)', amount: Math.round(j.contract * 0.15), issued: addDays(TODAY, -12), due: addDays(TODAY, 18), status: 'Sent', auto: false, qbo: 'Synced' });
   });
+  // invoice packages: school district needs each unit's MCP record attached to the monthly invoice
+  invoices.forEach(function (iv) { if (iv.customer === 'C15') { iv.kind = 'Maintenance — October 2026'; iv.period = '2026-10'; iv.status = 'Paid'; iv.issued = '2026-10-01'; iv.due = '2026-11-15'; } });
+  invoices.push({ id: 'INV-' + (invNo++), customer: 'C15', territory: 'RIC', ref: 'MA-2414', kind: 'Maintenance — October 2026 (in arrears)', period: '2026-10', amount: 395 * 6, issued: TODAY, due: addDays(TODAY, 45), status: 'Ready — package built', auto: true, draft: true, qbo: 'Pending', package: { mcp: 6, po: 'PO 4500-2026-0417' } });
+  invoices.push({ id: 'INV-' + (invNo++), customer: 'C15', territory: 'RIC', ref: 'MA-2414', kind: 'Maintenance — November 2026 (in arrears)', period: '2026-11', amount: 395 * 6, issued: '2026-12-01', due: '2027-01-15', status: 'Holding — visits in progress', auto: true, draft: true, qbo: '—', package: { mcp: 6, po: 'PO 4500-2026-0417' } });
+  invoices.forEach(function (iv) { if (iv.customer === 'C15' && iv.status === 'Paid' && !iv.package) { iv.kind = 'Maintenance — September 2026 (in arrears)'; iv.period = '2026-09'; iv.issued = '2026-10-02'; iv.due = '2026-11-16'; iv.package = { mcp: 6, po: 'PO 4500-2026-0417' }; } });
   // credit hold scenario: Old Dominion Senior Living has 2 overdue past 45
   invoices.forEach(function (iv) { if (iv.customer === 'C03') { iv.status = 'Overdue'; iv.due = addDays(TODAY, -52); } });
   customers.forEach(function (c) {
-    var open = invoices.filter(function (iv) { return iv.customer === c.id && iv.status !== 'Paid'; });
+    var open = invoices.filter(function (iv) { return iv.customer === c.id && iv.status !== 'Paid' && !iv.draft; });
     c.balance = open.reduce(function (s, iv) { return s + iv.amount; }, 0);
     var worst = open.reduce(function (w, iv) { return Math.max(w, daysBetween(iv.due, TODAY)); }, -999);
     c.daysPastDue = worst > 0 ? worst : 0;
@@ -442,7 +462,7 @@
   ];
 
   var SEED = {
-    version: 2, today: TODAY, now: NOW_TIME,
+    version: 3, today: TODAY, now: NOW_TIME,
     owners: owners, territories: territories, locals: locals, mechanics: mechanics, office: office, ahjs: ahjs,
     customers: customers, buildings: buildings, units: units, contracts: contracts, visits: visits, calls: calls,
     onCall: onCall, jobs: jobs, timeEntries: timeEntries, tcTemplates: tcTemplates, proposals: proposals, leads: leads,
